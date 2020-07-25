@@ -144,3 +144,13 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # проперти для того, чтобы Django знал, где хранить медиафайлы, загруженные пользователями
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+
+
+# Own authentication
+# Django будет использовать бэкэнды по порядку, поэтому теперь пользователь сможет аутентифицироваться и с помощью
+# электронной почты. Идентификационные данные сначала будут проверены ModelBackend. Если этот бэкэнд не вернет
+# объект пользователя, Django попробует аутентифицировать его с помощью нашего класса, EmailAuthBackend
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'account.authentication.EmailAuthBackend'
+]
