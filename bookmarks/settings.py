@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'social_django',
 ]
 
 MIDDLEWARE = [
@@ -154,3 +155,10 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'account.authentication.EmailAuthBackend'
 ]
+
+ALLOWED_HOSTS = ['bookmarksite.com', 'localhost', '127.0.0.1']
+
+SOCIAL_AUTH_FACEBOOK_KEY = '984489861973468'  # Facebook App ID
+SOCIAL_AUTH_FACEBOOK_SECRET = 'b748482710f779325a1a0b02f12cb61f'  # Facebook App Secret
+SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
+
