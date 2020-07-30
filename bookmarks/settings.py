@@ -25,7 +25,11 @@ SECRET_KEY = 'nq7-vuc2d6uxfl1&rbafg^n+ces_ib$jk&)6x%k%4*p%kpy3o%'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['bookmarksite.com',
+                 'localhost',
+                 '127.0.0.1',
+                 '4bd3c7c83c3d.ngrok.io'
+                 ]
 
 
 # Application definition
@@ -156,8 +160,6 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'account.authentication.EmailAuthBackend'
 ]
-
-ALLOWED_HOSTS = ['bookmarksite.com', 'localhost', '127.0.0.1']
 
 SOCIAL_AUTH_FACEBOOK_KEY = '984489861973468'  # Facebook App ID
 SOCIAL_AUTH_FACEBOOK_SECRET = 'b748482710f779325a1a0b02f12cb61f'  # Facebook App Secret
