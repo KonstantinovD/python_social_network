@@ -5,6 +5,7 @@ from .forms import ImageCreateForm
 from .models import Image
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from common.decorators import ajax_required
 
 
 @login_required
@@ -47,6 +48,8 @@ def image_detail(request, id, slug):
 # Используем два декоратора для функции. Декоратор <login_required> не даст неавторизованным пользователям
 # доступ к этому обработчику. Декоратор <require_POST> возвращает ошибку HttpResponseNotAllowed
 # В Django также реализованы декораторы <required_GET>, и <require_http_methods>, принимающий список разрешенных методов
+@ajax_required
+# Теперь, если вы обратитесь к URL’у http://127.0.0.1:8000/images/like/ напрямую через браузер, то получите ошибку 400.
 @login_required
 @require_POST
 def image_like(request):
