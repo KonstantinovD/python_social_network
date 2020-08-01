@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import ImageCreateForm
 from .models import Image
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 
 @login_required
@@ -23,6 +25,8 @@ def image_create(request):
         form = ImageCreateForm(data=request.GET)
     return render(request, 'images/image/create.html',
                   {'section': 'images', 'form': form})
+
+
 # Этот обработчик выполняет следующие действия:
 # - получает начальные данные и создает объект формы. Эти данные содержат url и title картинки со стороннего сайта, они
 # будут переданы в качестве аргументов GET-запроса JavaScript-инструментом, который мы добавим чуть позже.
@@ -37,4 +41,28 @@ def image_create(request):
 def image_detail(request, id, slug):
     image = get_object_or_404(Image, id=id, slug=slug)
     return render(request, 'images/image/detail.html',
-                  {'section': 'images','image': image})
+                  {'section': 'images', 'image': image})
+
+
+# Используем два декоратора для функции. Декоратор <login_required> не даст неавторизованным пользователям
+# доступ к этому обработчику. Декоратор <require_POST> возвращает ошибку HttpResponseNotAllowed
+# В Django также реализованы декораторы <required_GET>, и <require_http_methods>, принимающий список разрешенных методов
+@login_required
+@require_POST
+def image_like(request):
+    image_id = request.POST.get('id')
+    action = request.POST.get('action')
+    if image_id and action:
+        try:
+            image = Image.objects.get(id=image_id)
+            # Если вы вызываете add() и передаете в него пользователя, который уже связан с текущей картинкой, дубликат
+            # не будет создан. Аналогично при вызове remove() и попытке удалить пользователя, который не связан с
+            # изображением, ошибки нет. Еще один полезный метод (many to many) – clear(). Он удаляет все отношения
+            if action == 'like':
+                image.users_like.add(request.user)
+            else:
+                image.users_like.remove(request.user)
+            return JsonResponse({'status': 'ok'})
+        except:
+            pass
+    return JsonResponse({'status': 'ok'})

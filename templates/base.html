@@ -49,5 +49,39 @@
         <div id="content">
             {% block content %}{% endblock %}
         </div>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">
+        </script>  {# Мы подключили библиотеку jQuery из CDN Google #}
+        <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js">
+        </script>
+        <script>
+            // получает значение csrftoken с помощью Cookies.get();
+            var csrftoken = Cookies.get('csrftoken');
+            // добавляет функцию csrfSafeMethod(), которая определяет, нужно ли проверять CSRF-токен для текущего
+            // HTTP-метода. Методы, которые не требуют проверки, – GET, HEAD, OPTIONS, TRACE
+            function csrfSafeMethod(method){
+                // Для этих методов токен не будет подставляться в заголовок.
+                return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+            }
+            // настраивает AJAX-запросы методом $.ajaxSetup(). Перед отправкой каждого AJAX-запроса проверяет, нужно ли
+            // выставлять CSRF-токен. Если нужно, то задает в заголовке X-CSRFToken запроса значение токена,
+            // полученное из куков. В нашем случае CSRF-токен будет добавляться в заголовки запросов методами POST и PUT
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                    }
+                }
+            });
+            $(document).ready(function(){
+                {% block domready %}{% endblock %}
+            });
+        </script>
+{# Мы добавили тег <script> для использования JavaScript-кода. Метод $(document). ready() – это функция jQuery, она получает #}
+{#  в качестве аргумента код, который будет выполнен, когда удастся выстроить иерархию документа (Document Object Model – DOM). #}
+{#  Браузер формирует DOM в виде древовидной структуры после загрузки страницы. Передавая выполняемый код в метод ready(), #}
+{#  гарантируем, что элементы, с которыми мы будем взаимодействовать, будут загружены и доступны в DOM (наш код выполнится только #}
+{#  после того, как браузер сформирует его). Внутри обработчика мы добавили блочный тег Django и назвали его domready. #}
+{#  Так дочерние шаблоны смогут добавлять собственный JavaScript-код, который должен выполняться после формирования DOM.#}
     </body>
 </html>

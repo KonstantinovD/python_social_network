@@ -5,10 +5,32 @@
 {% block content %}
     <h1>{{ image.title }}</h1>
     <img src="{{ image.image.url }}" class="image-detail">
-    {% with total_likes=image.users_like.count %}
+{# добавили еще одну переменную с помощью тега {% with %}, для того чтобы запомнить результат выполнения #}
+{#    QuerySet’а image.users_like.all и избежать его повторного вычисления                               #}
+    {% with total_likes=image.users_like.count users_like=image.users_like.all %}
         <div class="image-info">
             <div>
-                <span class="count">{{ total_likes }} like{{ total_likes|pluralize }}</span>
+                <span class="count">
+                    <span class="total">{{ total_likes }}</span>
+                    like{{ total_likes|pluralize }}
+                </span>
+{# добавили атрибуты в тег <a>: <data-id> – ID изображения; <data-action> – действие, #}
+{# которое нужно выполнять после клика пользователя на ссылку (like или unlike).      #}
+{# Оба этих атрибута будут отправляться на сервер через AJAX в обработчик image_like. Когда пользователь кликает      #}
+{# на ссылку like/unlike на стороне браузера, необходимо выполнить следующие действия:                                #}
+{# - 1. отправить AJAX-запрос, передав в качестве параметров ID изображения и действие;                               #}
+{# - 2. если получен успешный результат, следует обновить атрибут data-action тега <a> на противоположное значение    #}
+{# (like/unlike) и заменить текст соответствующим образом;                                                            #}
+{# - 3. обновить общее количество лайков likes.                                                                       #}
+                <a href="#" data-id="{{ image.id }}"
+                   data-action="{% if request.user in users_like %}un{% endif %}like"
+                   class="like button">
+                    {% if request.user not in users_like %}
+                        Like
+                    {% else %}
+                        Unlike
+                    {% endif %}
+                </a>
             </div>
             {{ image.description|linebreaks }}
         </div>
@@ -28,4 +50,43 @@
             {% endfor %}
         </div>
     {% endwith %}
+{% endblock %}
+
+{% block domready %}
+  //- 1. используем селектор $('a.like'), чтобы найти все элементы "a", у которых есть css-класс like;
+  //- 2. определяем функцию – обработчик события click. Она будет вызываться при каждом клике на ссылке like/unlike
+  $('a.like').click(function(e){
+    //- 3. внутри обработчика используем e.preventDefault(), чтобы отменить поведение по умолчанию для ссылки "a"
+    //- (при клике пользователь не будет перенаправлен на страницу по ссылке);
+    e.preventDefault();
+    //- 4. используем функцию $.post() для выполнения асинхронного POST-запроса. jQuery также предоставляет функции
+    //- $.get() для отправки GET-запроса и $.ajax() (в нем мы можем указать метод запроса);
+    //- 5. используем шаблонный тег Django { "url" }, чтобы получить URL обработчика AJAX-запроса на сервере;
+    $.post('{% url "images:like" %}',
+      {
+    //- 6. формируем POST-параметры для обработчика на сервере (ID и action). Получаем их значения
+    //- из атрибутов data-id и data-action элемента "a";
+        id: $(this).data('id'),
+        action: $(this).data('action')
+      },
+    //- 7. определяем функцию, которая будет вызвана при успешном выполнении запроса. Она получает в качестве аргумента
+    //- data данные из тела ответа
+      function(data){
+    //- 8. проверяем атрибут status полученных в ответе данных – равен ли он значению ok. Если равен, заменяем атрибут
+    // data-action и текст ссылки на противоположные. Так пользователь сможет отменить свое действие;
+        if (data['status'] == 'ok')
+        {
+          var previous_action = $('a.like').data('action');
+
+          // Изменяем переменную действия.
+          $('a.like').data('action', previous_action == 'like' ? 'unlike' : 'like');
+          // Изменяем текст ссылки.
+          $('a.like').text(previous_action == 'like' ? 'Unlike' : 'Like');
+          // Обновляем общее количество лайков.
+          var previous_likes = parseInt($('span.count .total').text());
+          $('span.count .total').text(previous_action == 'like' ? previous_likes + 1 : previous_likes - 1);
+        }
+      }
+    );
+  });
 {% endblock %}
