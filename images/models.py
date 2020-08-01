@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.urls import reverse
 from django.utils.text import slugify
 
 
@@ -41,3 +42,5 @@ class Image(models.Model):
         # функция slugify() автоматически формирует его из переданного заголовка, после чего мы сохраняем объект
         # картинки. Таким образом, слаг будет генерироваться автоматически, юзеру не нужно будет вводить его вручную
 
+    def get_absolute_url(self):
+        return reverse('images:detail', args=[self.id, self.slug])
