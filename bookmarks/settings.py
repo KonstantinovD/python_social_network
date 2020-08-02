@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+from django.urls import reverse_lazy
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -166,3 +168,10 @@ SOCIAL_AUTH_FACEBOOK_KEY = '984489861973468'  # Facebook App ID
 SOCIAL_AUTH_FACEBOOK_SECRET = 'b748482710f779325a1a0b02f12cb61f'  # Facebook App Secret
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
 
+ABSOLUTE_URL_OVERRIDES = {
+    'auth.user': lambda u: reverse_lazy('user_detail', args=[u.username])
+}
+# Django динамически добавляет метод get_absolute_url() для каждой модели, перечисленной в настройке
+# ABSOLUTE_URL_OVERRIDES. В этом случае из настройки будет возвращаться соответствующий модели URL. В примере для
+# пользователя мы возвращаем URL по имени user_detail. Теперь мы можем вызвать метод get_absolute_url() для объекта
+# User, чтобы получить его канонический адрес

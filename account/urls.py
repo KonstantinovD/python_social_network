@@ -31,6 +31,12 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('edit/', views.edit, name='edit'),
     # path('redirect/', redirect_view)
+    path('users/', views.user_list, name='user_list'),
+    path('users/follow/', views.user_follow, name='user_follow'),  # Убедитесь, что этот шаблон будет находиться перед
+    # шаблоном user_detail. В противном случае запрос по адресу /users/follow/ подойдет к регулярному отображению
+    # шаблона user_detail, при этом будет вызван не тот обработчик, который мы ожидаем. Помните, что Django проверяет
+    # каждый URL-шаблон по порядку, пока не найдет первый подходящий.
+    path('users/<username>/', views.user_detail, name='user_detail'),
 ]
 # Вы можете закомментировать то, что мы указывали в файле urls.py для приложения account, и вместо этого
 # подключить пути приложения django.contrib.auth.urls:    path('', include('django.contrib.auth.urls')),
