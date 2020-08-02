@@ -9,6 +9,14 @@ from common.decorators import ajax_required
 from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from actions.utils import create_action
+import redis
+from django.conf import settings
+
+
+# Подключение к Redis.
+r = redis.StrictRedis(host=settings.REDIS_HOST,
+                      port=settings.REDIS_PORT,
+                      db=settings.REDIS_DB)
 
 
 @login_required
@@ -45,8 +53,21 @@ def image_create(request):
 
 def image_detail(request, id, slug):
     image = get_object_or_404(Image, id=id, slug=slug)
+    # Увеличиваем количество просмотров картинки на 1.
+    total_views = r.incr('image:{}:views'.format(image.id))
+    # Увеличиваем рейтинг картинки на 1.
+    r.zincrby('image_ranking', image.id, 1)
     return render(request, 'images/image/detail.html',
-                  {'section': 'images', 'image': image})
+                  {'section': 'images', 'image': image, 'total_views': total_views})
+# Используя Redis, мы добавили увеличение количества просмотров на 1 с помощью метода incr. Если ключ еще не существует,
+# то он будет создан, а только после этого добавится единица. Метод incr() возвращает итоговое значение, которое мы
+# сохраняем в переменную total_views и передаем в контекст шаблона. Формируем ключ для хранилища в виде
+# object-type:id:field, например image:33:id. Таким образом мы обезопасим себя от дублирования ключей
+# и непредвиденного поведения
+# ...
+# Мы используем метод zincrby(), чтобы работать с сортированным набором данных о количестве просмотров каждой картинки.
+# Сохраняем просмотры по ключу вида image_ranking и идентификатору картинки id. Таким образом, мы будем иметь актуальные
+# сведения о том, сколько раз каждое изображение было просмотрено пользователями сайта.
 
 
 # Используем два декоратора для функции. Декоратор <login_required> не даст неавторизованным пользователям
@@ -105,3 +126,26 @@ def image_list(request):
 # - для AJAX-запросов используем list_ajax.html. Он содержит только HTML для показа картинок;
 # - для стандартных запросов используем list.html. Этот шаблон наследуется от base.html и показывает полноценную
 # страницу, на которую добавлен список картинок из list_ajax.html.
+
+
+@login_required
+def image_ranking(request):
+    # Получаем набор рейтинга картинок (работает неверно).
+    image_ranking = r.zrange('image_ranking', 0, 1, desc=True)[:10]
+    image_ranking_ids = [int(id) for id in image_ranking]
+    # Получаем отсортированный список самых популярных картинок.
+    most_viewed = list(Image.objects.filter(id__in=image_ranking_ids))
+    most_viewed.sort(key=lambda x: image_ranking_ids.index(x.id))
+    return render(request, 'images/image/ranking.html',
+                  {'section': 'images', 'most_viewed': most_viewed})
+# В этом обработчике мы выполняем такие действия:
+#   1) используем метод zrange() для доступа к нескольким элементам сортированного списка. В качестве аргументов можно
+# передать начальный и конечный индексы необходимых элементов. Указав 0 начальным и 1 конечным, мы получим все элементы
+# из хранилища. Также есть возможность задать сортировку в убывающем порядке, передав аргумент desc=True.
+# После получения результата из хранилища Redis ограниваем количество объектов до 10 – [:10];
+#   2) сохраняем идентификаторы нужных картинок в списке image_ranking_ids. Затем обращаемся к модели Image и получаем
+# соответствующие этой переменной объекты картинок. При этом мы передаем QuerySet изображений в функцию list(), чтобы
+# выполнить сортировку методом sort();
+#   3) сортируем картинки по их идентификаторам и порядку в списке, полученном из Redis. Теперь самые просматриваемые
+# изображения расположены в нужном порядке, и мы можем показать их в шаблоне.
+

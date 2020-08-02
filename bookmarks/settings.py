@@ -176,3 +176,7 @@ ABSOLUTE_URL_OVERRIDES = {
 # ABSOLUTE_URL_OVERRIDES. В этом случае из настройки будет возвращаться соответствующий модели URL. В примере для
 # пользователя мы возвращаем URL по имени user_detail. Теперь мы можем вызвать метод get_absolute_url() для объекта
 # User, чтобы получить его канонический адрес
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0

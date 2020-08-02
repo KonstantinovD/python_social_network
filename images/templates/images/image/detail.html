@@ -14,6 +14,9 @@
                     <span class="total">{{ total_likes }}</span>
                     like{{ total_likes|pluralize }}
                 </span>
+                <span class="count">
+                    {{ total_views }} view{{ total_views|pluralize }}
+                </span>
 {# добавили атрибуты в тег <a>: <data-id> – ID изображения; <data-action> – действие, #}
 {# которое нужно выполнять после клика пользователя на ссылку (like или unlike).      #}
 {# Оба этих атрибута будут отправляться на сервер через AJAX в обработчик image_like. Когда пользователь кликает      #}
