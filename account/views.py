@@ -5,10 +5,12 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.views.decorators.http import require_POST
 
+from actions.models import Action
 from common.decorators import ajax_required
 from .forms import LoginForm, UserRegistrationForm, UserEditForm, ProfileEditForm
 from .models import Profile, Contact
 from django.contrib import messages
+from actions.utils import create_action
 
 
 def user_login(request):
@@ -57,12 +59,39 @@ def user_login(request):
 
 @login_required
 def dashboard(request):
+    # По умолчанию отображаем все действия.
+    actions = Action.objects.exclude(user=request.user)
+    # (Мы уже динамически добавили поля following в модель User)
+    following_ids = request.user.following.values_list('id', flat=True)
+    if following_ids:
+        # Если текущий пользователь подписался на кого-то, отображаем только действия этих пользователей.
+        actions = actions.filter(user_id__in=following_ids)
+    # отображаем последние 10. Мы не используем order_by() QuerySetʼа, потому что записи и так будут отсортированы
+    # по порядку, указанному в опциях модели Action – ordering = ('-created',).
+    # ... !!!!! ...
+    # 1) Django определяет для QuerySetʼов метод select_related(), который дает возможность получить объекты, связанные
+    # отношением «один ко многим». Запрос получится чуть более сложным, но позволит избежать многократного
+    # обращения к базе данных для доступа к связанным объектам.
+    # Мы используем user__profile, чтобы получить данные модели Profile в том же самом запросе. Если бы мы не передали
+    # аргументы в select_related(), Django обратился бы к связанным объектам для всех полей ForeignKey. Всегда ограни-
+    # чивайте список необходимых вам связей при использовании select_related().
+    # ...
+    # 2) select_related() помогает нам оптимизировать доступ к объектам, связанным отношением «один ко многим». Но он
+    # не работает для отношений «многие ко многим» и «многие к одному» (ManyToMany и обратная связь для ForeignKey).
+    # Для этого случая Django предоставляет метод prefetch_related(), который работает аналогично select_related(), но
+    # может быть применен и к упомянутым связям. В отличие от select_related(), где поиск связей происходит
+    # в базе данных, этот метод связывает объекты уже на уровне Python. Используя
+    # prefetch_related(), мы можем обращаться и к полям типов GenericRelation и GenericForeignKey.
+    actions = actions.select_related('user', 'user__profile').prefetch_related('target')[:10]
+
+
     # обработчик обернут в декоратор login_required. Он проверяет, авторизован ли пользователь. Если пользователь
     # авторизован, Django выполняет обработку. В противном случае пользователь перенаправляется на страницу
     # логина. При этом в GET-параметре задается next -адрес запрашиваемой страницы. Таким образом, после успешного
     # прохождения авторизации пользователь будет перенаправлен на страницу, куда он пытался попасть. Именно для этих
     # целей мы вставили скрытое поле next в форму логина.
-    return render(request, 'account/dashboard.html', {'section': 'dashboard'})
+    return render(request, 'account/dashboard.html',
+                  {'section': 'dashboard', 'actions': actions})
 
 
 # Хороший пример if-блоков для обработки формы
@@ -78,6 +107,7 @@ def register(request):
             # Сохраняем пользователя в базе данных.
             new_user.save()
             Profile.objects.create(user=new_user)
+            create_action(new_user, 'has created an account')
             return render(request,
                           'account/register_done.html',
                           {'new_user': new_user})
@@ -135,6 +165,7 @@ def user_follow(request):
             user = User.objects.get(id=user_id)
             if action == 'follow':
                 Contact.objects.get_or_create(user_from=request.user, user_to=user)
+                create_action(request.user, 'is following', user)
             else:
                 Contact.objects.filter(user_from=request.user, user_to=user).delete()
             return JsonResponse({'status': 'ok'})
