@@ -21,9 +21,11 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('account/', include('account.urls')),
-    path('social-auth/', include('social_django.urls', namespace='social')),
-    path('images/', include('images.urls', namespace='images')),
-]
+    path('posting/', include('posting.urls')),
+    path('markdownx/', include('markdownx.urls')),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Функция static() подходит только для локальной разработки, но не для применения на боевых серверах.
 # Никогда не используйте Django в качестве поставщика статических и медиафайлов.

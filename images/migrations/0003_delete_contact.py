@@ -6,7 +6,6 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('auth', '0013_auto_20200801_2336'),
         ('images', '0002_contact'),
     ]
 

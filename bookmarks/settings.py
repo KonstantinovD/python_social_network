@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+from datetime import datetime
+
 from django.urls import reverse_lazy
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,10 +49,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'social_django',
     'images.apps.ImagesConfig',
-    'sorl.thumbnail',
     'actions.apps.ActionsConfig',
+    'markdown',
+    'markdownx',
+    'posting.apps.PostingConfig',
+    'sorl.thumbnail',
 ]
 
 MIDDLEWARE = [
@@ -97,7 +101,7 @@ WSGI_APPLICATION = 'bookmarks.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bookmarks',
+        'NAME': 'military2',
         'USER': 'postgres',
         'PASSWORD': 'katukov',
     }
@@ -155,6 +159,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 
+MARKDOWNX_MEDIA_PATH = datetime.now().strftime('markdownx/%Y/%m/%d')
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 # Own authentication
 # Django будет использовать бэкэнды по порядку, поэтому теперь пользователь сможет аутентифицироваться и с помощью
