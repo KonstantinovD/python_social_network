@@ -15,12 +15,12 @@
             <span class="logo">Bookmarks</span>
             {% if request.user.is_authenticated %}
                 <ul class="menu">
+                    <li {% if section == "s1" %}class="selected"{% endif %}>
+                        <a href="{% url "blog" %}?reset=true">НА ГЛАВНУЮ</a>
+                    </li>
                     <li {% if section == "dashboard" %} class="selected"{% endif %}>
                         <a href="{% url "dashboard" %}">My dashboard</a>
                     </li>
-{#                    <li {% if section == "images" %}class="selected"{% endif %}>#}
-{#                        <a href="{% url "images:list" %}">Images</a>#}
-{#                    </li>#}
                     <li {% if section == "people" %}class="selected"{% endif %}>
                         <a href="{% url "user_list" %}">People</a>
                     </li>
@@ -48,6 +48,10 @@
         {% endif %}
         <div id="content">
             {% block content %}{% endblock %}
+        </div>
+
+        <div id="sidebar">
+            {% block sidebar %}{% endblock %}
         </div>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">

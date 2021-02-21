@@ -1,3 +1,6 @@
+{% extends 'base.html' %}
+{% load static %}
+
 <header class="masthead text-center text-white d-flex" id="mastheadPost" style="background-image: url(/media/{{ post_detail.background_image }})">
     <div class="container my-auto">
         <div class="row">
@@ -10,7 +13,11 @@
     </div>
 </header>
 
+{% block content %}
 <div id="blog">
+    <h1>{{ post_detail.title }}</h1>
+
     <p class="card-text" id="post"> {{ post_detail.formatted_markdown|safe }} </p>
     <div class="text-muted text-right" style="margin-top: 4rem"> {{ post_detail.created_date }}</div>
 </div>
+{% endblock %}

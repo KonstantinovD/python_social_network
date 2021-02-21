@@ -4,6 +4,8 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.views.decorators.http import require_POST
+from django.contrib.auth.models import Group
+from common.constants import UserGroupNames
 
 from actions.models import Action
 from common.decorators import ajax_required
@@ -106,6 +108,9 @@ def register(request):
             new_user.set_password(user_form.cleaned_data['password'])
             # Сохраняем пользователя в базе данных.
             new_user.save()
+            group = Group.objects.get(name=UserGroupNames.BASE_USER)
+            group.user_set.add(new_user)
+            group.save()
             Profile.objects.create(user=new_user)
             create_action(new_user, 'has created an account')
             return render(request,

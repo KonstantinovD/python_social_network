@@ -1,8 +1,11 @@
 {% extends 'base.html' %}
-{#{% load staticfiles %}#}
+{% load static %}
+{% load blog_tags %}
+
+    <link href="{% static "css/sidebar.css" %}" rel="stylesheet">
 
 {% block content %}
-
+<link href="{% static "css/sidebar.css" %}" rel="stylesheet">
 {% csrf_token %}
 
 {#    <h2>Add a new post</h2>#}
@@ -21,10 +24,70 @@
             <div class="card-body">
                 <h1 class="card-title"> <a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h1>
                 <p class="card-text"> {{ post.body_summary|striptags }} </p>
+                <div>
+                    {% for tag in post.tags %}
+                        <i>{{tag}}</i>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </div>
                 <div> {{ post.created_date }}</div>
             </div>
         </div>
 
     {% endfor %}
+    {% include "pagination.html" with page=posts %}
+
+{% endblock %}
+
+{% block sidebar %}
+    <link href="{% static "css/sidebar.css" %}" rel="stylesheet">
+    {% csrf_token %}
+
+        <h2>Daniil's personal blog</h2>
+        <p>This is my personal blog. I've written 7 posts</p>
+
+        <h3>Search for posts</h3>
+        <form action="." method="get">
+            {{ search_content_form.as_p }}
+            <input name="content" type="submit" value="Search">
+        </form>
+
+        <br><br>
+        <h3>Search for tag</h3>
+        <form action="." method="get" id="tagform">
+            <p>
+
+                <label for="tags">tag:</label>
+                <select name="query" id="tags" form="tagform"
+                        id="id_query">
+                {% for tag in all_tags %}
+                    <option value="{{ tag }}">{{ tag }}</option>
+                {% endfor %}
+{#                    <option value="volvo">Volvo</option>#}
+{#                    <option value="saab">Saab</option>#}
+{#                    <option value="opel">Opel</option>#}
+{#                    <option value="ВМВ">ВМВ</option>#}
+                </select>
+{#                <label for="id_query">tag:</label>#}
+{#                <input type="text" name="query" required="" id="id_query" list="tags_input">#}
+{#                <datalist id="tags_input">#}
+{#                    <option>Volvo</option>#}
+{#                    <option>Saab</option>#}
+{#                    <option>Mercedes</option>#}
+{#                    <option>Audi</option>#}
+{#                </datalist>#}
+            </p>
+{#            {{ search_tag_form.as_p }}#}
+{#            <input type="text" list="cars" />#}
+{#            <datalist id="cars">#}
+{#                <option>Volvo</option>#}
+{#                <option>Saab</option>#}
+{#                <option>Mercedes</option>#}
+{#                <option>Audi</option>#}
+{#            </datalist>#}
+            <input name="tag" type="submit" value="Search">
+        </form>
+
+        <h3>Latest posts</h3>
+        {% show_latest_posts 3 %}
 
 {% endblock %}

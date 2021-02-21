@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     'markdownx',
     'posting.apps.PostingConfig',
     'sorl.thumbnail',
+    'taggit',
+    'django.contrib.postgres',
 ]
 
 MIDDLEWARE = [

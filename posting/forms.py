@@ -10,7 +10,15 @@ class PostForm(forms.ModelForm):
     # Django найдет нужную модель и автоматически построит форму.
     class Meta:
         model = BlogPost
-        fields = ('title', 'body')
+        fields = ('title', 'body', 'tags')
+
+
+class SearchContentForm(forms.Form):
+    query = forms.CharField()
+
+
+class SearchTagForm(forms.Form):
+    query = forms.CharField()
 
 # class PostForm(forms.ModelForm):
 #     # Поле name имеет тип CharField. Этот тип полей будет отображаться как элемент <inputtype="text">
