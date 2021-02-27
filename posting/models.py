@@ -55,6 +55,9 @@ class BlogPost(DateCreateModMixin):
     def get_absolute_url(self):
         return reverse('post_detail', args=[self.id])
 
+    def __str__(self):
+        return self.title
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=20, blank=True)
@@ -63,3 +66,44 @@ class Tag(models.Model):
         return self.name
 
 
+class Comment(models.Model):
+    # Атрибут related_name позволяет получить доступ к комментариям конкретной статьи. Теперь мы сможем обращаться
+    # к статье из комментария, используя запись comment.post, и к комментариям статьи при помощи post.comments.all().
+    # Если бы мы не определили related_name, юзалось бы имя связанной модели с постфиксом _set (например, comment_set).
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name='comments', default=None)
+
+    body = models.TextField()
+
+    num_related_to_article = models.IntegerField(blank=True, default=0)
+    index_referenced_to_related_to_article = models.IntegerField(blank=True, default=None, null=True)
+    index_referenced_to = models.IntegerField(blank=True, default=None, null=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    active = models.BooleanField(default=True)  # добавили булевое поле active, чтобы можно было скрывать комментарии
+
+    likes = models.IntegerField(default=0)
+    dislikes = models.IntegerField(default=0)
+
+    class Meta:  # поле created для сортировки комментариев в хронологическом порядке.
+        ordering = ('created',)
+
+    def __str__(self):
+        return self.body
+
+
+class Preference(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name='users_like')
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE,
+                             related_name='comment_likes', default=None)
+    value = models.IntegerField()
+    date = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.user) + ':' + str(self.comment) + ':' + str(self.value)
+
+    class Meta:
+        unique_together = ("user", "comment", "value")

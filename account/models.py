@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.conf import settings
+from django.contrib.postgres.fields import HStoreField, ArrayField
+from django.db.models import CommaSeparatedIntegerField
 
 
 class Profile(models.Model):
@@ -13,6 +15,11 @@ class Profile(models.Model):
 
     def __str__(self):
         return 'Profile for user {}'.format(self.user.username)
+
+    params = HStoreField(default={'show_name': 'true', 'show_nickname': 'false'})
+
+    favorites = ArrayField(models.IntegerField(), size=60, default=[])
+
 
 # Кроме использования ссылки типа «один к одному», Django позволяет полностью заменить модель пользователя. Для этого
 # наш класс должен быть наследником AbstractUser, который реализует базовые методы для пользователя.

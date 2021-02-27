@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load blog_tags %}
+{% load thumbnail %}
 
 <header class="masthead text-center text-white d-flex" id="mastheadPost" style="background-image: url(/media/{{ post_detail.background_image }})">
     <div class="container my-auto">
@@ -16,8 +18,153 @@
 {% block content %}
 <div id="blog">
     <h1>{{ post_detail.title }}</h1>
+    <div style="height: 50px">
+        <a style="float: right" href="#" data-id="{{ post_detail.id }}"
+           data-action="to_favorites" data-user="{{ request.user.id }}"
+           class="favorite button" id="{{ post_detail.id }}">
+            {% if post_detail.id in request.user.profile.favorites %}
+                удалить из избранного
+            {% else %}
+                в избранное
+            {% endif %}
+        </a>
+    </div>
+    <br>
+
+    {% with user=post_detail.author profile=post_detail.author.profile %}
+        {% if profile.photo %}
+            {% thumbnail user.profile.photo "80x80" crop="100%" as im %}
+                <a href="{{ user.get_absolute_url }}">
+                    <img src="{{ im.url }}" alt="{{ user|get_user_full_name }}" class="user-detail">
+                </a>
+            {% endthumbnail %}
+        {% endif %}
+        <br><p>&nbsp;&nbsp;&nbsp;&nbsp;{{ user_name }}</p>
+    <br>
+    {% endwith %}
+
 
     <p class="card-text" id="post"> {{ post_detail.formatted_markdown|safe }} </p>
     <div class="text-muted text-right" style="margin-top: 4rem"> {{ post_detail.created_date }}</div>
+
+
+    <div>
+        {% with comments.count as total_comments %} {# строка с количеством комментариев #}
+            <h3>Комметариев: {{ total_comments }}</h3>
+        {% endwith %}
+        {% if request.user|has_group:"BaseUser" %}
+
+        <form action="./comment" method="post">
+            <p>
+                <h3>Оставить комментарий</h3>
+                <textarea name="body" cols="40" rows="10" required="" id="id_body"></textarea>
+            </p>
+            {% csrf_token %}
+            <input name="create_comment" type="submit"  value="Опубликовать" class="testclass" >
+        </form>
+        {% endif %}
+        {% for comment in comments %}
+        <div class="comment">
+{#            <span class="count">#}
+{#                <span class="total">{{ total_likes }}</span>#}
+{#                    like{{ total_likes|pluralize }}#}
+{#            </span>#}
+{#            {% with total_likes=comment.comment_likes.count users_like=image.users_like.all %}#}
+{#            <p class="info">#}
+{##}
+{#            </p>#}
+            {{ comment.body }}
+            likes: <span class="total_likes">{{ comment|get_comment_likes }}</span>, dislikes: <span class="total_dislikes">{{ comment|get_comment_dislikes }}</span>
+{#            {{ comment|get_user_preference:request.user }}#}
+            {% with comment|get_user_preference:request.user as user_likes %}| {{ user_likes }} {% endwith %}
+            <br><a href="#" data-id="{{ comment.id }}"
+                   data-action="like" data-user="{{ request.user.id }}"
+                   class="like button" id="{{ comment.id }}-lk">LIKE</a>
+            <a href="#" data-id="{{ comment.id }}" data-action="dislike" data-user="{{ request.user }}"
+               class="like button" id="{{ comment.id }}-dslk">DISLIKE
+{#                    {% if request.user not in users_like %}#}
+{#                        Like#}
+{#                    {% else %}#}
+{#                        Unlike#}
+{#                    {% endif %}#}
+            </a>
+
+        </div>
+        {% empty %} {# срабатывает, если for ни разу не отработал #}
+            <p>There are no comments yet.</p>
+        {% endfor %}
+
+{#    {% if messages %}#}
+{#        {% for msg in messages|slice:":1" %}#}
+{#            <h2>{{msg.message}}</h2>#}
+{#        {% endfor %}#}
+{#        <h2>Your comment has been added</h2>#}
+{#    {% else %}#}
+{#        <h2>Add a new comment</h2>#}
+{#        <form action="./comment" method="post">#}
+{#            {{ comment_form.as_p }}#}
+{#            {% csrf_token %}#}
+{#            <p><input type="submit" value="Add comment"></p>#}
+{#        </form>#}
+{#    {% endif %}#}
+    </div>
 </div>
+
+
+
+
 {% endblock %}
+
+{% block domready %}
+  //- 1. используем селектор $('a.like'), чтобы найти все элементы "a", у которых есть css-класс like;
+  //- 2. определяем функцию – обработчик события click. Она будет вызываться при каждом клике на ссылке like/unlike
+  $('a.like').click(function(e){
+    //- alert(e.target.id)
+    //- 3. внутри обработчика используем e.preventDefault(), чтобы отменить поведение по умолчанию для ссылки "a"
+    //- (при клике пользователь не будет перенаправлен на страницу по ссылке);
+    e.preventDefault();
+    //- 4. используем функцию $.post() для выполнения асинхронного POST-запроса. jQuery также предоставляет функции
+    //- $.get() для отправки GET-запроса и $.ajax() (в нем мы можем указать метод запроса);
+    //- 5. используем шаблонный тег Django { "url" }, чтобы получить URL обработчика AJAX-запроса на сервере;
+    $.post('{% url "comment_like" %}',
+      {
+    //- 6. формируем POST-параметры для обработчика на сервере (ID и action). Получаем их значения
+    //- из атрибутов data-id и data-action элемента "a";
+        id: $(this).data('id'),
+        action: $(this).data('action'),
+        //user: $(this).data('user')
+      },
+    //- 7. определяем функцию, которая будет вызвана при успешном выполнении запроса. Она получает в качестве аргумента
+    //- data данные из тела ответа
+      function(data){
+    //- 8. проверяем атрибут status полученных в ответе данных – равен ли он значению ok. Если равен, заменяем атрибут
+    // data-action и текст ссылки на противоположные. Так пользователь сможет отменить свое действие;
+        if (data['status'] == 'ok')
+        {
+            alert(e.target.id)
+            //- e.target.style.backgroundColor = "#FFFFFF"
+            //- var previous_likes = parseInt($('span.total_likes').text());
+          //- alert(previous_likes);
+        }
+      }
+    );
+  });
+
+  $('a.favorite').click(function(e){
+    e.preventDefault();
+    $.post('{% url "article_favorite" %}',
+      {
+        id: $(this).data('id'),
+        action: $(this).data('action'),
+      },
+      function(data){
+        if (data['status'] == 'ok')
+        {
+		  var previous_action = e.target.innerHTML;
+          e.target.innerHTML = previous_action == 'в избранное' ? 'удалить из избранного' : 'в избранное';
+        }
+      }
+    );
+  });
+
+{% endblock %}v

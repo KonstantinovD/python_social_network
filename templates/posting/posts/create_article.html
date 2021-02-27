@@ -1,10 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block content %}
+<link href="{% static "css/add_article.css" %}" rel="stylesheet">
+
+{% csrf_token %}
+
+<div id="blog">
+    <h2>Create new article</h2>
+
+    <form action="./newpost" method="post">
+        {{ post_form.as_p }}
+        {% csrf_token %}
+        {{ post_form.media }}
+        <p><input type="submit" value="Опубликовать статью"></p>
+    </form>
+</div>
+{% endblock %}

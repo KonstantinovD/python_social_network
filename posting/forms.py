@@ -2,7 +2,7 @@ from django import forms
 from markdownx.fields import MarkdownxFormField
 from markdownx.models import MarkdownxField
 
-from posting.models import BlogPost
+from posting.models import BlogPost, Comment
 
 
 class PostForm(forms.ModelForm):
@@ -10,7 +10,7 @@ class PostForm(forms.ModelForm):
     # Django найдет нужную модель и автоматически построит форму.
     class Meta:
         model = BlogPost
-        fields = ('title', 'body', 'tags')
+        fields = ('title', 'tags', 'body')
 
 
 class SearchContentForm(forms.Form):
@@ -19,6 +19,14 @@ class SearchContentForm(forms.Form):
 
 class SearchTagForm(forms.Form):
     query = forms.CharField()
+
+
+class CommentForm(forms.ModelForm):
+    # Все, что нужно для создания формы из модели, – указать, какую модель использовать в опциях класса Meta.
+    # Django найдет нужную модель и автоматически построит форму.
+    class Meta:
+        model = Comment
+        fields = ('body',)
 
 # class PostForm(forms.ModelForm):
 #     # Поле name имеет тип CharField. Этот тип полей будет отображаться как элемент <inputtype="text">

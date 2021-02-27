@@ -1,5 +1,5 @@
+from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchVector
-from django.contrib.sessions import serializers
 
 
 from posting.models import Tag
@@ -7,6 +7,7 @@ from .forms import SearchContentForm, SearchTagForm
 from .models import BlogPost
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from common.constants import *
+
 
 def create_tag_if_not_exist(array_field):
     tag_folder = []
@@ -48,6 +49,29 @@ def apply_post_filter(request):
 
         add_post_ids_to_session(request, result_posts)
 
+        return result_posts
+
+    if 'author_id' in request.GET:
+        author_id = request.GET['author_id']
+        user = User.objects.get(pk=author_id)
+        result_posts = BlogPost.objects.filter(author = user).order_by('-created_date')
+        add_post_ids_to_session(request, result_posts)
+        return result_posts
+
+    if 'post_ids' in request.GET:
+        post_ids_str = request.GET['post_ids']
+        post_ids_str = post_ids_str[1:-1]
+        post_ids_array = post_ids_str.split(',')
+        result_posts = BlogPost.objects.filter(id__in=post_ids_array).order_by('-created_date')
+
+        add_post_ids_to_session(request, result_posts)
+
+        return result_posts
+
+    if 'tag_value' in request.GET:
+        tag_value = request.GET['tag_value']
+        result_posts = BlogPost.objects.filter(tags__icontains=tag_value)
+        add_post_ids_to_session(request, result_posts)
         return result_posts
 
     post_ids = request.session.get('s_posts', None)

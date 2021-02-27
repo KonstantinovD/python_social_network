@@ -7,7 +7,21 @@
     <p>You can edit your account using the following form:</p>
     <form action="." method="post" enctype="multipart/form-data">
         {{ user_form.as_p }}
+        <br>
         {{ profile_form.as_p }}
+        <br>
+        <div style="background-color: #ddffdd; padding: 10px 10px 10px 10px; width: 30%">
+{#            {{ user_profile.params.show_nickname }}#}
+            <h4 style="margin-block-start: 0em">режим отображения</h4>
+            <input type="checkbox" name="show_nickname" id="show_nickname_id"
+                   {{ show_nickname_v }}>
+            <i>&nbsp;отображать логин пользователя</i>
+            <br><br>
+            <input type="checkbox" name="show_real_name" id="show_real_name_id"
+                   {{ show_name_v }}>
+            <i>&nbsp;отображать имя пользователя</i>
+{#            {% endwith %}#}
+        </div>
         {% csrf_token %}
         <p><input type="submit" value="Save changes"></p>
     </form>

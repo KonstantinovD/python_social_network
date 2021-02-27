@@ -1,4 +1,6 @@
 {% load static %}
+{% load blog_tags %}
+{% load thumbnail %}
 <!DOCTYPE html>
 <html>
     <head>
@@ -13,19 +15,26 @@
 {# и получим объект типа User. Неавторизованный пользователь является объектом типа AnonymousUser. Чтобы определить,  #}
 {# с каким типом пользователя мы имеем дело, достаточно обратиться к атрибуту is_authenticated.                       #}
             <span class="logo">Bookmarks</span>
-            {% if request.user.is_authenticated %}
+
                 <ul class="menu">
                     <li {% if section == "s1" %}class="selected"{% endif %}>
                         <a href="{% url "blog" %}?reset=true">НА ГЛАВНУЮ</a>
                     </li>
+                    {% if request.user.is_authenticated %}
                     <li {% if section == "dashboard" %} class="selected"{% endif %}>
                         <a href="{% url "dashboard" %}">My dashboard</a>
                     </li>
                     <li {% if section == "people" %}class="selected"{% endif %}>
                         <a href="{% url "user_list" %}">People</a>
                     </li>
+                    {% if request.user|has_group:"Publisher" %}
+                    <li {% if section == "s2" %}class="selected"{% endif %}>
+                        <a href="{% url "create_post" %}">ADD_ARTICLE</a>
+                    </li>
+                    {% endif %}
+                    {% endif %}
                 </ul>
-            {% endif %}
+
 
             <span class="user">
                 {% if request.user.is_authenticated %}

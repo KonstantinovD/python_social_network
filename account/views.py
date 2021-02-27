@@ -1,14 +1,18 @@
+from datetime import timedelta
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate, login
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import Group
 from common.constants import UserGroupNames
 
 from actions.models import Action
 from common.decorators import ajax_required
+from posting.models import BlogPost
 from .forms import LoginForm, UserRegistrationForm, UserEditForm, ProfileEditForm
 from .models import Profile, Contact
 from django.contrib import messages
@@ -62,12 +66,18 @@ def user_login(request):
 @login_required
 def dashboard(request):
     # По умолчанию отображаем все действия.
-    actions = Action.objects.exclude(user=request.user)
+
+    time_threshold = timezone.now() - timedelta(days=30)
+
+    actions = Action.objects.exclude(
+        user=request.user).filter(
+        user__in=request.user.following.all(), created__gte=time_threshold)[:10]
+
     # (Мы уже динамически добавили поля following в модель User)
-    following_ids = request.user.following.values_list('id', flat=True)
-    if following_ids:
-        # Если текущий пользователь подписался на кого-то, отображаем только действия этих пользователей.
-        actions = actions.filter(user_id__in=following_ids)
+    # following_ids = request.user.following.values_list('id', flat=True)
+    # if following_ids:
+    #     # Если текущий пользователь подписался на кого-то, отображаем только действия этих пользователей.
+    #     actions = actions.filter(user_id__in=following_ids)
     # отображаем последние 10. Мы не используем order_by() QuerySetʼа, потому что записи и так будут отсортированы
     # по порядку, указанному в опциях модели Action – ordering = ('-created',).
     # ... !!!!! ...
@@ -84,7 +94,7 @@ def dashboard(request):
     # может быть применен и к упомянутым связям. В отличие от select_related(), где поиск связей происходит
     # в базе данных, этот метод связывает объекты уже на уровне Python. Используя
     # prefetch_related(), мы можем обращаться и к полям типов GenericRelation и GenericForeignKey.
-    actions = actions.select_related('user', 'user__profile').prefetch_related('target')[:10]
+    # actions = actions.select_related('user', 'user__profile').prefetch_related('target')[:10]
 
 
     # обработчик обернут в декоратор login_required. Он проверяет, авторизован ли пользователь. Если пользователь
@@ -112,7 +122,7 @@ def register(request):
             group.user_set.add(new_user)
             group.save()
             Profile.objects.create(user=new_user)
-            create_action(new_user, 'has created an account')
+            # create_action(new_user, 'has created an account')
             return render(request,
                           'account/register_done.html',
                           {'new_user': new_user})
@@ -123,6 +133,10 @@ def register(request):
 
 @login_required
 def edit(request):
+    user_profile = request.user.profile
+    show_nickname_v_checked = 'checked' if user_profile.params['show_nickname'] == 'true' else ''
+    show_name_v_checked = 'checked' if user_profile.params['show_name'] == 'true' else ''
+
     if request.method == 'POST':
         user_form = UserEditForm(instance=request.user, data=request.POST)
         profile_form = ProfileEditForm(instance=request.user.profile,
@@ -132,17 +146,37 @@ def edit(request):
         # и ProfileEditForm (для дополнительной, расширенной информации). Валидируем данные методом is_valid()
         # каждой из форм. Если обе формы заполнены корректно, сохраняем их с помощью метода save().
         if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            profile_form.save()
-            messages.success(request, 'Profile updated successfully')
-            return render(request, 'account/dashboard.html', {'section': 'dashboard'})
+            if not ('show_real_name' in request.POST or 'show_nickname' in request.POST):
+                messages.error(request,
+                               'Режим ображения имени/никнейма настроен неверно: выберите хотя бы одно значение')
+            else:
+                if 'show_real_name' in request.POST:
+                    show_name = 'true'
+                else:
+                    show_name = 'false'
+                if 'show_nickname' in request.POST:
+                    show_nickname = 'true'
+                else:
+                    show_nickname = 'false'
+
+                user_form.save()
+
+                new_profile = profile_form.save(commit=False)
+                new_profile.params['show_name'] = show_name
+                new_profile.params['show_nickname'] = show_nickname
+                new_profile.save()
+
+                messages.success(request, 'Profile updated successfully')
+                return render(request, 'account/dashboard.html', {'section': 'dashboard'})
         else:
             messages.error(request, 'Error updating your profile')
     else:
         user_form = UserEditForm(instance=request.user)
         profile_form = ProfileEditForm(instance=request.user.profile)
+
     return render(request, 'account/edit.html',
-                  {'user_form': user_form, 'profile_form': profile_form})
+                  {'user_form': user_form, 'profile_form': profile_form,
+                   'show_nickname_v': show_nickname_v_checked, 'show_name_v': show_name_v_checked})
 
 
 @login_required
@@ -155,8 +189,13 @@ def user_list(request):
 @login_required
 def user_detail(request, username):
     user = get_object_or_404(User, username=username, is_active=True)
+    # TODO: change 'draft' to 'published'
+    posts = user.created_posts.order_by('-created_date')[:3]
+    # .filter(status='draft')
+    favorites = BlogPost.objects.filter(id__in=user.profile.favorites).order_by('-created_date')[:3]
     return render(request, 'account/user/detail.html',
-                  {'section': 'people', 'user': user})
+                  {'section': 'people', 'user': user, 'posts': posts,
+                   'favorites':  favorites})
 
 
 @ajax_required
@@ -170,7 +209,10 @@ def user_follow(request):
             user = User.objects.get(id=user_id)
             if action == 'follow':
                 Contact.objects.get_or_create(user_from=request.user, user_to=user)
-                create_action(request.user, 'is following', user)
+
+                backrelcontact = Contact.objects.filter(user_from=user, user_to=request.user).first()
+                if backrelcontact is not None:
+                    create_action(request.user, 'is_following', user)
             else:
                 Contact.objects.filter(user_from=request.user, user_to=user).delete()
             return JsonResponse({'status': 'ok'})

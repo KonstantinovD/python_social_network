@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-
+{% load blog_tags %}
 {% load thumbnail %}
 
-{% block title %}{{ user.get_full_name }}{% endblock %}
+{% block title %}{{ user|get_user_full_name }}{% endblock %}
 
 {% block content %}
-    <h1>{{ user.get_full_name }}</h1>
+    <h1>{{ user|get_user_full_name }}</h1>
+    <div style="height: 250px">
     <div class="profile-info">
         {% thumbnail user.profile.photo "180x180" crop="100%" as im %}
             <img src="{{ im.url }}" class="user-detail">
@@ -16,8 +17,13 @@
             <span class="total">{{ total_followers }}</span>
             follower{{ total_followers|pluralize }}
         </span>
+        <span class="count">
+            <span>{{ user.created_posts.count }}</span>
+            article{{ user.created_posts.count|pluralize }}
+        </span>
 {# В HTML-элемент <a> добавлены атрибуты data-id и data-action, которые содержат ID открытого профиля и действие follow        #}
 {# или unfollow, доступное текущему пользователю. Также на странице показаны картинки, которые пользователь добавил в закладки #}
+        {% if request.user.id != user.id %}
         <a href="#" data-id="{{ user.id }}"
            data-action="{% if request.user in user.followers.all %}un{% endif %}follow"
            class="follow button">
@@ -27,10 +33,60 @@
                 Unfollow
             {% endif %}
         </a>
+        {% endif %}
 {#        <div id="image-list" class="image-container">#}
 {#            {% include "images/image/list_ajax.html" with images=user.images_created.all %}#}
 {#        </div>#}
     {% endwith %}
+    </div>
+
+    <div style="margin-bottom: 20px">
+        <div>
+            <h2 style="display: inline">Опубликованные статьи</h2>
+            &nbsp&nbsp<a style="color: grey; float: right" href="{% url "blog" %}?author_id={{ user.id }}">
+            <i>посмотреть все</i></a>
+            <br><br>
+        </div>
+        {% for post in posts %}
+
+            <div class="card shadow bg-white">
+                <div class="card-body">
+                    <h2 class="card-title"><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
+                    <p class="card-text"> {{ post.body_summary|striptags }} </p>
+                    <div>
+                        {% for tag in post.tags %}
+                        <a style="color: black"
+                           href="{% url "blog" %}?tag_value={{ tag }}"
+                        ><i>{{tag}}</i></a>{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div> {{ post.created_date }}</div>
+                </div>
+            </div>
+        {% empty %}
+            <p>Пользователь еще не опубликовал ни одной статьи</p>
+        {% endfor %}
+    </div>
+
+    <div>
+        <div>
+            <h2 style="display: inline">В избранном</h2>
+            &nbsp&nbsp<a style="color: grey; float: right" href="{% url "blog" %}?post_ids={{ user.profile.favorites }}">
+            <i>посмотреть все</i></a>
+            <br><br>
+        </div>
+        {% for post in favorites %}
+            <div class="card shadow bg-white">
+                <div class="card-body">
+                    <h2 class="card-title"><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
+                    <div> {{ post.created_date }}</div>
+                </div>
+            </div>
+        {% empty %}
+            <p>Пользователь еще не добавил в "Избранное" ни одной статьи</p>
+        {% endfor %}
+    </div>
+
 {% endblock %}
 
 {% block domready %}
