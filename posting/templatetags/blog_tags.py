@@ -64,11 +64,18 @@ def get_user_full_name(user):
     return ''
 
 
-@register.filter(name='reword_user_action')
-def reword_user_action(action):
+@register.filter(takes_context=True, name='reword_user_action')
+def reword_user_action(action, user):
     # if action.target == user:
     if action.verb == 'is_following':
         return "подписался на Вас"
     if action.verb == 'creates_article':
         return "опубликовал статью"
+    if action.verb == 'change_groups':
+        res_message = "установил ваши пользовательские группы как ["
+        for g in user.groups.all():
+            res_message = res_message + g.name + ', '
+        res_message = res_message[:-2]
+        res_message += ']'
+        return res_message
     return action.verb

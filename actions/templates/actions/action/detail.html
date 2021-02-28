@@ -28,7 +28,7 @@
         <p>            {# действие, тип активности и связанный объект, если он существует. #}
             <span class="date">{{ action.created|timesince }} ago</span><br />
             <a href="{{ user.get_absolute_url }}">{{ user|get_user_full_name }}</a>
-            {{ action|reword_user_action }}
+            {{ action|reword_user_action:request.user }}
             {% if action.target and action.target != request.user %}
                 {% with target=action.target %}
                     <a href="{{ target.get_absolute_url }}">{{ target }}</a>

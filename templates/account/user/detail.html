@@ -40,6 +40,29 @@
     {% endwith %}
     </div>
 
+    {% if request.user|has_group:"Moderator" %}
+    <div style="margin-bottom: 10px">
+        <form action="." method="post" enctype="multipart/form-data">
+            <div style="background-color: #ddffdd; padding: 10px 10px 10px 10px; width: 30%">
+                <h4 style="margin-block-start: 0em"></h4>
+                <input type="checkbox" name="group_publisher" id="group_publisher_id"
+                       {% if user|has_group:"Publisher" %}checked{% endif %}>
+                <i>&nbsp;Publisher</i>
+                <br><br>
+                <input type="checkbox" name="group_publisher_with_grant" id="group_publisher_with_grant_id"
+                       {% if user|has_group:"PublisherWithGrant" %}checked{% endif %}>
+                <i>&nbsp;PublisherWithGrant</i>
+                <br><br>
+                <input type="checkbox" name="group_moderator" id="group_moderator_id"
+                       {% if user|has_group:"Moderator" %}checked{% endif %}>
+                <i>&nbsp;Moderator</i>
+            </div>
+            {% csrf_token %}
+            <p><input type="submit" value="Save changes"></p>
+        </form>
+    </div>
+    {% endif %}
+
     <div style="margin-bottom: 20px">
         <div>
             <h2 style="display: inline">Опубликованные статьи</h2>

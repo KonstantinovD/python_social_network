@@ -17,6 +17,8 @@ from .forms import LoginForm, UserRegistrationForm, UserEditForm, ProfileEditFor
 from .models import Profile, Contact
 from django.contrib import messages
 from actions.utils import create_action
+from django.db.models import Q
+from django.contrib.admin.options import get_content_type_for_model
 
 
 def user_login(request):
@@ -68,40 +70,17 @@ def dashboard(request):
     # По умолчанию отображаем все действия.
 
     time_threshold = timezone.now() - timedelta(days=30)
-
+    group_moderator = Group.objects.get(name=UserGroupNames.MODERATOR)
     actions = Action.objects.exclude(
         user=request.user).filter(
-        user__in=request.user.following.all(), created__gte=time_threshold)[:10]
+        Q(user__in=request.user.following.all())
+        | Q(user__in=group_moderator.user_set.all(),
+            target_ct=get_content_type_for_model(request.user),
+            target_id=request.user.pk),
+        created__gte=time_threshold)[:10]
 
-    # (Мы уже динамически добавили поля following в модель User)
-    # following_ids = request.user.following.values_list('id', flat=True)
-    # if following_ids:
-    #     # Если текущий пользователь подписался на кого-то, отображаем только действия этих пользователей.
-    #     actions = actions.filter(user_id__in=following_ids)
-    # отображаем последние 10. Мы не используем order_by() QuerySetʼа, потому что записи и так будут отсортированы
-    # по порядку, указанному в опциях модели Action – ordering = ('-created',).
-    # ... !!!!! ...
-    # 1) Django определяет для QuerySetʼов метод select_related(), который дает возможность получить объекты, связанные
-    # отношением «один ко многим». Запрос получится чуть более сложным, но позволит избежать многократного
-    # обращения к базе данных для доступа к связанным объектам.
-    # Мы используем user__profile, чтобы получить данные модели Profile в том же самом запросе. Если бы мы не передали
-    # аргументы в select_related(), Django обратился бы к связанным объектам для всех полей ForeignKey. Всегда ограни-
-    # чивайте список необходимых вам связей при использовании select_related().
-    # ...
-    # 2) select_related() помогает нам оптимизировать доступ к объектам, связанным отношением «один ко многим». Но он
-    # не работает для отношений «многие ко многим» и «многие к одному» (ManyToMany и обратная связь для ForeignKey).
-    # Для этого случая Django предоставляет метод prefetch_related(), который работает аналогично select_related(), но
-    # может быть применен и к упомянутым связям. В отличие от select_related(), где поиск связей происходит
-    # в базе данных, этот метод связывает объекты уже на уровне Python. Используя
-    # prefetch_related(), мы можем обращаться и к полям типов GenericRelation и GenericForeignKey.
-    # actions = actions.select_related('user', 'user__profile').prefetch_related('target')[:10]
-
-
-    # обработчик обернут в декоратор login_required. Он проверяет, авторизован ли пользователь. Если пользователь
-    # авторизован, Django выполняет обработку. В противном случае пользователь перенаправляется на страницу
-    # логина. При этом в GET-параметре задается next -адрес запрашиваемой страницы. Таким образом, после успешного
-    # прохождения авторизации пользователь будет перенаправлен на страницу, куда он пытался попасть. Именно для этих
-    # целей мы вставили скрытое поле next в форму логина.
+    # content_type = get_content_type_for_model(request.user)
+    # object_id = request.user.pk
     return render(request, 'account/dashboard.html',
                   {'section': 'dashboard', 'actions': actions})
 
@@ -193,6 +172,34 @@ def user_detail(request, username):
     posts = user.created_posts.order_by('-created_date')[:3]
     # .filter(status='draft')
     favorites = BlogPost.objects.filter(id__in=user.profile.favorites).order_by('-created_date')[:3]
+
+    if request.method == 'POST':
+        group_publisher = Group.objects.get(name=UserGroupNames.PUBLISHER)
+        if 'group_publisher' in request.POST:
+            group_publisher.user_set.add(user)
+            group_publisher.save()
+        else:
+            group_publisher.user_set.remove(user)
+            group_publisher.save()
+
+        group_publisher_with_grant = Group.objects.get(name=UserGroupNames.PUBLISHER_WITH_GRANT)
+        if 'group_publisher_with_grant' in request.POST:
+            group_publisher_with_grant.user_set.add(user)
+            group_publisher_with_grant.save()
+        else:
+            group_publisher_with_grant.user_set.remove(user)
+            group_publisher_with_grant.save()
+
+        group_moderator = Group.objects.get(name=UserGroupNames.MODERATOR)
+        if 'group_moderator' in request.POST:
+            group_moderator.user_set.add(user)
+            group_moderator.save()
+        else:
+            group_moderator.user_set.remove(user)
+            group_moderator.save()
+
+        create_action(request.user, 'change_groups', user)
+
     return render(request, 'account/user/detail.html',
                   {'section': 'people', 'user': user, 'posts': posts,
                    'favorites':  favorites})

@@ -61,7 +61,10 @@ def apply_post_filter(request):
     if 'post_ids' in request.GET:
         post_ids_str = request.GET['post_ids']
         post_ids_str = post_ids_str[1:-1]
-        post_ids_array = post_ids_str.split(',')
+        if post_ids_str == '':
+            post_ids_array = []
+        else:
+            post_ids_array = post_ids_str.split(',')
         result_posts = BlogPost.objects.filter(id__in=post_ids_array).order_by('-created_date')
 
         add_post_ids_to_session(request, result_posts)

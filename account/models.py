@@ -18,7 +18,7 @@ class Profile(models.Model):
 
     params = HStoreField(default={'show_name': 'true', 'show_nickname': 'false'})
 
-    favorites = ArrayField(models.IntegerField(), size=60, default=[])
+    favorites = ArrayField(models.IntegerField(), size=60, default=list, blank=True)
 
 
 # Кроме использования ссылки типа «один к одному», Django позволяет полностью заменить модель пользователя. Для этого
