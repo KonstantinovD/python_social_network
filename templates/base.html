@@ -16,11 +16,11 @@
 {# с каким типом пользователя мы имеем дело, достаточно обратиться к атрибуту is_authenticated.                       #}
             <span class="logo">Bookmarks</span>
 
-                <ul class="menu">
-                    <li {% if section == "s1" %}class="selected"{% endif %}>
-                        <a href="{% url "blog" %}?reset=true">НА ГЛАВНУЮ</a>
-                    </li>
-                    {% if request.user.is_authenticated %}
+            <ul class="menu">
+                <li {% if section == "s1" %}class="selected"{% endif %}>
+                    <a href="{% url "blog" %}?reset=true">НА ГЛАВНУЮ</a>
+                </li>
+                {% if request.user.is_authenticated %}
                     <li {% if section == "dashboard" %} class="selected"{% endif %}>
                         <a href="{% url "dashboard" %}">My dashboard</a>
                     </li>
@@ -28,12 +28,27 @@
                         <a href="{% url "user_list" %}">People</a>
                     </li>
                     {% if request.user|has_group:"Publisher" %}
-                    <li {% if section == "s2" %}class="selected"{% endif %}>
-                        <a href="{% url "create_post" %}">ADD_ARTICLE</a>
-                    </li>
+                        <li {% if section == "s2" %}class="selected"{% endif %}>
+                            <a href="{% url "create_post" %}">ADD_ARTICLE</a>
+                        </li>
                     {% endif %}
+
+                    {% if request.user|has_group:"Moderator" %}
+                        <li {% if section == "s2" %}class="selected"{% endif %}>
+                            <a href="{% url "not_published_blog_posts" %}">ALL_UNPUBLISHED</a>
+                        </li>
+                        <li {% if section == "s2" %}class="selected"{% endif %}>
+                            <a href="{% url "draft_blog_posts" %}">ALL_DRAFT</a>
+                        </li>
+                        <li {% if section == "s2" %}class="selected"{% endif %}>
+                            <a href="{% url "all_posts" %}">ALL_ARTICLES</a>
+                        </li>
                     {% endif %}
-                </ul>
+
+
+
+                {% endif %}
+            </ul>
 
 
             <span class="user">

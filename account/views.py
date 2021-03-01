@@ -79,10 +79,14 @@ def dashboard(request):
             target_id=request.user.pk),
         created__gte=time_threshold)[:10]
 
+    statuses_to_found = ['draft', 'rejected']
+    unpublished = BlogPost.objects.filter(status__in=statuses_to_found, author=request.user)
+
     # content_type = get_content_type_for_model(request.user)
     # object_id = request.user.pk
     return render(request, 'account/dashboard.html',
-                  {'section': 'dashboard', 'actions': actions})
+                  {'section': 'dashboard', 'actions': actions,
+                   'unpublished': unpublished})
 
 
 # Хороший пример if-блоков для обработки формы
@@ -173,9 +177,11 @@ def user_detail(request, username):
     # .filter(status='draft')
     favorites = BlogPost.objects.filter(id__in=user.profile.favorites).order_by('-created_date')[:3]
 
+    groups_result = UserGroupNames.BASE_USER + ', '
     if request.method == 'POST':
         group_publisher = Group.objects.get(name=UserGroupNames.PUBLISHER)
         if 'group_publisher' in request.POST:
+            groups_result = groups_result + UserGroupNames.PUBLISHER + ', '
             group_publisher.user_set.add(user)
             group_publisher.save()
         else:
@@ -184,6 +190,7 @@ def user_detail(request, username):
 
         group_publisher_with_grant = Group.objects.get(name=UserGroupNames.PUBLISHER_WITH_GRANT)
         if 'group_publisher_with_grant' in request.POST:
+            groups_result = groups_result + UserGroupNames.PUBLISHER_WITH_GRANT + ', '
             group_publisher_with_grant.user_set.add(user)
             group_publisher_with_grant.save()
         else:
@@ -192,13 +199,15 @@ def user_detail(request, username):
 
         group_moderator = Group.objects.get(name=UserGroupNames.MODERATOR)
         if 'group_moderator' in request.POST:
+            groups_result = groups_result + UserGroupNames.MODERATOR + ', '
             group_moderator.user_set.add(user)
             group_moderator.save()
         else:
             group_moderator.user_set.remove(user)
             group_moderator.save()
 
-        create_action(request.user, 'change_groups', user)
+        groups_result = '[' + groups_result[:-2] + ']'
+        create_action(request.user, 'change_groups ' + groups_result, user)
 
     return render(request, 'account/user/detail.html',
                   {'section': 'people', 'user': user, 'posts': posts,

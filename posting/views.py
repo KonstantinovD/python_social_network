@@ -1,14 +1,16 @@
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import HttpResponseRedirect, JsonResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from actions.utils import create_action
+from common.constants import UserGroupNames
 from .forms import *
 from .models import BlogPost, Tag, Preference
 from .postdetails.postgetails import fill_new_comment_data, process_post_request
 from .utils import create_tag_if_not_exist, get_posts_paginated, apply_post_filter
-from posting.templatetags.blog_tags import get_user_full_name
+from posting.templatetags.blog_tags import get_user_full_name, has_group
 
 
 def blog_posts(request):
@@ -16,6 +18,75 @@ def blog_posts(request):
 
     # posts = BlogPost.objects.all().order_by('-created_date')
     posts = apply_post_filter(request)
+    posts, page = get_posts_paginated(request, posts)
+
+    all_tags = Tag.objects.all().order_by('name')
+
+    search_content_form = SearchContentForm()
+    search_tag_form = SearchTagForm()
+
+    return render(request, 'posting/blog.html',
+                  {'posts': posts,
+                   'search_content_form': search_content_form,
+                   'search_tag_form': search_tag_form,
+                   'page': page,
+                   'all_tags': all_tags
+                   })
+
+
+@login_required
+@user_passes_test(lambda u: u.groups.filter(name='Moderator').exists(), )
+def not_published_blog_posts(request):
+
+    statuses_to_found = ['draft', 'rejected']
+    posts = BlogPost.objects.filter(status__in=statuses_to_found)\
+        .order_by('-created_date')
+
+    posts, page = get_posts_paginated(request, posts)
+
+    all_tags = Tag.objects.all().order_by('name')
+
+    search_content_form = SearchContentForm()
+    search_tag_form = SearchTagForm()
+
+    return render(request, 'posting/blog.html',
+                  {'posts': posts,
+                   'search_content_form': search_content_form,
+                   'search_tag_form': search_tag_form,
+                   'page': page,
+                   'all_tags': all_tags
+                   })
+
+
+@login_required
+@user_passes_test(lambda u: u.groups.filter(name='Moderator').exists(), )
+def draft_blog_posts(request):
+    statuses_to_found = ['draft']
+    posts = BlogPost.objects.filter(status__in=statuses_to_found) \
+        .order_by('-created_date')
+
+    posts, page = get_posts_paginated(request, posts)
+
+    all_tags = Tag.objects.all().order_by('name')
+
+    search_content_form = SearchContentForm()
+    search_tag_form = SearchTagForm()
+
+    return render(request, 'posting/blog.html',
+                  {'posts': posts,
+                   'search_content_form': search_content_form,
+                   'search_tag_form': search_tag_form,
+                   'page': page,
+                   'all_tags': all_tags
+                   })
+
+
+@login_required
+@user_passes_test(lambda u: u.groups.filter(name='Moderator').exists(), )
+def all_posts(request):
+    posts = BlogPost.objects.all()\
+        .order_by('-created_date')
+
     posts, page = get_posts_paginated(request, posts)
 
     all_tags = Tag.objects.all().order_by('name')
@@ -65,21 +136,103 @@ def create_post(request):
     if request.method == 'POST':
         post_form = PostForm(data=request.POST)
         if post_form.is_valid():
-            cd = post_form.cleaned_data
-            new_item = post_form.save(commit=False)
-            new_item.author = request.user
-            create_tag_if_not_exist(cd['tags'])
-            new_item.save()
-            create_action(request.user, 'creates_article', new_item)
-            return HttpResponseRedirect(request.path.replace('/newpost', '?reset=true'))
+            if 'post_id' in request.GET:
+                post_id = request.GET['post_id']
+                post = BlogPost.objects.get(pk=post_id)
+                if post is not None:
+                    cd = post_form.cleaned_data
+                    create_tag_if_not_exist(cd['tags'])
+                    post.tags = cd['tags']
+                    post.body = cd['body']
+                    post.title = cd['title']
+                    post.status = 'draft'
+                    post.created_date = timezone.now()
+                    post.save()
+                    return redirect('dashboard')
+            else:
+                cd = post_form.cleaned_data
+                new_item = post_form.save(commit=False)
+                new_item.author = request.user
+                create_tag_if_not_exist(cd['tags'])
+
+                if has_group(request.user, UserGroupNames.PUBLISHER_WITH_GRANT):
+                    new_item.status = 'published'
+                    new_item.save()
+                    create_action(request.user, 'creates_article', new_item)
+
+                else:
+                    new_item.save()
+
+                return HttpResponseRedirect(request.path.replace('/newpost', '?reset=true'))
         else:
             return HttpResponseRedirect(request.path)
     if request.method == 'GET':
         post_form = PostForm()
         return render(request, 'posting/posts/create_article.html', {'post_form': post_form,})
 
-    # return redirect(request, 'blog/post/detail.html', new_comment=new_comment, comment_form=comment_form)
-    # post_detail(request, year, month, day, post, new_comment=new_comment, comment_form=comment_form)
+
+@login_required
+@user_passes_test(lambda u: u.groups.filter(name='Publisher').exists(), )
+def delete_post(request):
+    if 'post_id' in request.GET:
+        post_id = request.GET['post_id']
+        post = BlogPost.objects.get(pk=post_id)
+
+        if request.user != post.author:
+            create_action(request.user,
+                          'удалил вашу статью \"' + post.title + '\"',
+                          post.author)
+
+        post.delete()
+
+        if request.user != post.author:
+            return redirect('not_published_blog_posts')
+
+        return redirect('dashboard')
+
+
+@login_required
+@user_passes_test(lambda u: u.groups.filter(name='Publisher').exists(), )
+def update_post(request):
+    if request.method == 'GET':
+        if 'post_id' in request.GET:
+            post_id = request.GET['post_id']
+            post = BlogPost.objects.get(pk=post_id)
+            if post is not None:
+                post_form = PostForm(instance=post)
+                return render(request, 'posting/posts/create_article.html', {'post_form': post_form, 'post_id': post_id })
+        return redirect('dashboard')
+
+
+@login_required
+@user_passes_test(lambda u: u.groups.filter(name='Moderator').exists(), )
+def reject_post(request):
+    if 'post_id' in request.GET:
+        post_id = request.GET['post_id']
+        post = BlogPost.objects.get(pk=post_id)
+        if post is not None:
+            post.status = 'rejected'
+            post.save()
+            create_action(request.user,
+                          'отклонил вашу статью \"' + post.title + '\"',
+                          post.author)
+        return redirect('not_published_blog_posts')
+
+
+@login_required
+@user_passes_test(lambda u: u.groups.filter(name='Moderator').exists(), )
+def publish_post(request):
+    if 'post_id' in request.GET:
+        post_id = request.GET['post_id']
+        post = BlogPost.objects.get(pk=post_id)
+        if post is not None:
+            post.status = 'published'
+            post.save()
+            create_action(request.user,
+                          'опубликовал вашу статью \"' + post.title + '\"',
+                          post.author)
+            create_action(post.author, 'creates_article', post)
+        return redirect('dashboard')
 
 
 # Используем два декоратора для функции. Декоратор <login_required> не даст неавторизованным пользователям

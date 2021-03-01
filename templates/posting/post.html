@@ -19,15 +19,44 @@
 <div id="blog">
     <h1>{{ post_detail.title }}</h1>
     <div style="height: 50px">
-        <a style="float: right" href="#" data-id="{{ post_detail.id }}"
-           data-action="to_favorites" data-user="{{ request.user.id }}"
-           class="favorite button" id="{{ post_detail.id }}">
-            {% if post_detail.id in request.user.profile.favorites %}
-                удалить из избранного
-            {% else %}
-                в избранное
+        {% if post_detail|is_published %}
+            {% if request.user|has_group:"Moderator" %}
+                <a class="button"
+                   style="float: right; margin-left: 5px; margin-right: 5px; background-color: #cc0033"
+                   href="{% url "delete_post" %}?post_id={{ post_detail.id }}">Удалить</a>
             {% endif %}
-        </a>
+            <a style="float: right ; margin-left: 5px; margin-right: 5px;"
+               href="#" data-id="{{ post_detail.id }}"
+               data-action="to_favorites" data-user="{{ request.user.id }}"
+               class="favorite button" id="{{ post_detail.id }}">
+                {% if post_detail.id in request.user.profile.favorites %}
+                    удалить из избранного
+                {% else %}
+                    в избранное
+                {% endif %}
+            </a>
+        {% else %}
+            <h2 style="display: inline">Status:
+                <p style="display: inline; color: #CC3434">{{ post_detail.status }}</p></h2>
+            <a class="button"
+               style="float: right; margin-left: 5px; margin-right: 5px; background-color: #cc0033"
+               href="{% url "delete_post" %}?post_id={{ post_detail.id }}">Удалить</a>
+            {% if request.user|has_not_group:"Moderator" %}
+            <a class="button"
+               style="float: right; margin-left: 5px; margin-right: 5px; background-color: #1586de"
+               href="{% url "update_post" %}?post_id={{ post_detail.id }}">Редактировать</a>
+            {% endif %}
+            {% if request.user|has_group:"Moderator" %}
+            <a class="button"
+               style="float: right; margin-left: 5px; margin-right: 5px; background-color: darkorange"
+               href="{% url "reject_post" %}?post_id={{ post_detail.id }}">Отклонить</a>
+            {% endif %}
+            {% if request.user|has_group:"Moderator" %}
+            <a class="button"
+               style="float: right; margin-left: 5px; margin-right: 5px; background-color: #0ac33e"
+               href="{% url "publish_post" %}?post_id={{ post_detail.id }}">Опубликовать</a>
+            {% endif %}
+        {% endif %}
     </div>
     <br>
 
@@ -49,6 +78,7 @@
 
 
     <div>
+        {% if post_detail|is_published %}
         {% with comments.count as total_comments %} {# строка с количеством комментариев #}
             <h3>Комметариев: {{ total_comments }}</h3>
         {% endwith %}
@@ -65,14 +95,7 @@
         {% endif %}
         {% for comment in comments %}
         <div class="comment">
-{#            <span class="count">#}
-{#                <span class="total">{{ total_likes }}</span>#}
-{#                    like{{ total_likes|pluralize }}#}
-{#            </span>#}
-{#            {% with total_likes=comment.comment_likes.count users_like=image.users_like.all %}#}
-{#            <p class="info">#}
-{##}
-{#            </p>#}
+
             {{ comment.body }}
             likes: <span class="total_likes">{{ comment|get_comment_likes }}</span>, dislikes: <span class="total_dislikes">{{ comment|get_comment_dislikes }}</span>
 {#            {{ comment|get_user_preference:request.user }}#}
@@ -82,31 +105,13 @@
                    class="like button" id="{{ comment.id }}-lk">LIKE</a>
             <a href="#" data-id="{{ comment.id }}" data-action="dislike" data-user="{{ request.user }}"
                class="like button" id="{{ comment.id }}-dslk">DISLIKE
-{#                    {% if request.user not in users_like %}#}
-{#                        Like#}
-{#                    {% else %}#}
-{#                        Unlike#}
-{#                    {% endif %}#}
             </a>
 
         </div>
         {% empty %} {# срабатывает, если for ни разу не отработал #}
             <p>There are no comments yet.</p>
         {% endfor %}
-
-{#    {% if messages %}#}
-{#        {% for msg in messages|slice:":1" %}#}
-{#            <h2>{{msg.message}}</h2>#}
-{#        {% endfor %}#}
-{#        <h2>Your comment has been added</h2>#}
-{#    {% else %}#}
-{#        <h2>Add a new comment</h2>#}
-{#        <form action="./comment" method="post">#}
-{#            {{ comment_form.as_p }}#}
-{#            {% csrf_token %}#}
-{#            <p><input type="submit" value="Add comment"></p>#}
-{#        </form>#}
-{#    {% endif %}#}
+    {% endif %}
     </div>
 </div>
 

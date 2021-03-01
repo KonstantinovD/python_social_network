@@ -26,7 +26,7 @@ def apply_post_filter(request):
         if form.is_valid():
             query = form.cleaned_data['query']
             result_posts = BlogPost.objects.annotate(
-                search=SearchVector('title', 'body'), ).filter(search=query)
+                search=SearchVector('title', 'body'), ).filter(status='published').filter(search=query)
 
             add_post_ids_to_session(request, result_posts)
 
@@ -38,14 +38,14 @@ def apply_post_filter(request):
             form = SearchTagForm(request.GET)
         if form.is_valid():
             query = form.cleaned_data['query']
-            result_posts = BlogPost.objects.filter(tags__icontains=query)
+            result_posts = BlogPost.objects.filter(status='published').filter(tags__icontains=query)
 
             add_post_ids_to_session(request, result_posts)
 
             return result_posts
 
     if 'reset' in request.GET:
-        result_posts = BlogPost.objects.all().order_by('-created_date')
+        result_posts = BlogPost.objects.filter(status='published').order_by('-created_date')
 
         add_post_ids_to_session(request, result_posts)
 
@@ -54,7 +54,7 @@ def apply_post_filter(request):
     if 'author_id' in request.GET:
         author_id = request.GET['author_id']
         user = User.objects.get(pk=author_id)
-        result_posts = BlogPost.objects.filter(author = user).order_by('-created_date')
+        result_posts = BlogPost.objects.filter(author=user).filter(status='published').order_by('-created_date')
         add_post_ids_to_session(request, result_posts)
         return result_posts
 
@@ -65,7 +65,7 @@ def apply_post_filter(request):
             post_ids_array = []
         else:
             post_ids_array = post_ids_str.split(',')
-        result_posts = BlogPost.objects.filter(id__in=post_ids_array).order_by('-created_date')
+        result_posts = BlogPost.objects.filter(status='published').filter(id__in=post_ids_array).order_by('-created_date')
 
         add_post_ids_to_session(request, result_posts)
 
@@ -73,20 +73,20 @@ def apply_post_filter(request):
 
     if 'tag_value' in request.GET:
         tag_value = request.GET['tag_value']
-        result_posts = BlogPost.objects.filter(tags__icontains=tag_value)
+        result_posts = BlogPost.objects.filter(status='published').filter(tags__icontains=tag_value)
         add_post_ids_to_session(request, result_posts)
         return result_posts
 
     post_ids = request.session.get('s_posts', None)
     if post_ids is None:
-        result_posts = BlogPost.objects.all().order_by('-created_date')
+        result_posts = BlogPost.objects.filter(status='published').order_by('-created_date')
 
         add_post_ids_to_session(request, result_posts)
 
         return result_posts
     else:
         result_posts = BlogPost.objects\
-            .filter(id__in=post_ids).order_by('-created_date')
+            .filter(status='published').filter(id__in=post_ids).order_by('-created_date')
         return result_posts
 
 

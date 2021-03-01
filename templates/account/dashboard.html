@@ -5,15 +5,6 @@
 {% block content %}
     <h1>Profile</h1>
 
-{#    {% with total_images_created=request.user.images_created.count %}#}
-{#        <p>Welcome to your dashboard. You have bookmarked#}
-{#            {{ total_images_created }} image{{ total_images_created|pluralize }}.</p>#}
-{#    {% endwith %}#}
-
-{#    <p>Drag the following button to your bookmarks toolbar to bookmark images from other websites#}
-{#        <a href="javascript:{% include "bookmarklet_launcher.js" %}" class="button">Bookmark it</a>#}
-{#    </p>#}
-
     <p>
         You can <a href="{% url "edit" %}">edit your profile</a> or
         <a href="{% url "password_change" %}">change your password</a>.
@@ -26,4 +17,22 @@
             {% include "actions/action/detail.html" %}
         {% endfor %}
     </div>
+
+    <br>
+    <h2>Неопубликованные статьи</h2>
+    <br>
+        <div>
+        {% for post in unpublished %}
+            <div class="card shadow bg-white">
+                <div class="card-body">
+                    <h2 style="display: inline" class="card-title"><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
+                    <i style="float: right">{{ post.created_date }}</i>
+                </div>
+                <br>
+            </div>
+        {% empty %}
+            <p>У вас нет неопубликованных статей</p>
+        {% endfor %}
+    </div>
+
 {% endblock %}

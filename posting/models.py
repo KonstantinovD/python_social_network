@@ -37,12 +37,11 @@ class BlogPost(DateCreateModMixin):
     author = models.ForeignKey(User, on_delete=models.DO_NOTHING,
                                related_name='created_posts', default=None)
 
-    slug = models.SlugField(max_length=250, unique_for_date='created_date')
-
     status = models.CharField(max_length=10,
                               choices=STATUS_CHOICES, default='draft')
 
-    tags = ArrayField(models.CharField(max_length=20, blank=True), size=8, default=[])
+    tags = ArrayField(models.CharField(max_length=20, blank=True),
+                      size=8, default=[], blank=True)
 
     published_date = models.DateTimeField(blank=True, null=True)
 

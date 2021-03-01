@@ -21,6 +21,11 @@ def has_group(user, group_name):
         return False
 
 
+@register.filter(name='has_not_group')
+def has_not_group(user, group_name):
+    return has_group(user, group_name) is not True
+
+
 @register.filter(name='get_comment_likes')
 def get_comment_likes(comment):
     val = 0
@@ -68,14 +73,20 @@ def get_user_full_name(user):
 def reword_user_action(action, user):
     # if action.target == user:
     if action.verb == 'is_following':
-        return "подписался на Вас"
+        return "подписался на вас"
     if action.verb == 'creates_article':
         return "опубликовал статью"
-    if action.verb == 'change_groups':
-        res_message = "установил ваши пользовательские группы как ["
-        for g in user.groups.all():
-            res_message = res_message + g.name + ', '
-        res_message = res_message[:-2]
-        res_message += ']'
+    if action.verb.startswith('change_groups'):
+        res_message = action.verb.replace("change_groups", "установил ваши пользовательские группы как ", 1)
+        # res_message = "установил ваши пользовательские группы как ["
+        # for g in user.groups.all():
+        #     res_message = res_message + g.name + ', '
+        # res_message = res_message[:-2]
+        # res_message += ']'
         return res_message
     return action.verb
+
+
+@register.filter(name='is_published')
+def is_published(post):
+    return post.status == 'published'

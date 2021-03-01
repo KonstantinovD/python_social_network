@@ -8,12 +8,15 @@
 
 <div id="blog">
     <h2>Create new article</h2>
-
-    <form action="./newpost" method="post">
+    {% if post_id %}
+    <form action="./newpost?post_id={{ post_id }}" method="post">
+    {% else %}
+     <form action="./newpost" method="post">
+    {% endif %}
         {{ post_form.as_p }}
         {% csrf_token %}
         {{ post_form.media }}
-        <p><input type="submit" value="Опубликовать статью"></p>
+        <p><input type="submit" value="Создать новую статью"></p>
     </form>
 </div>
 {% endblock %}
