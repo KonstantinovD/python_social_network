@@ -20,5 +20,6 @@ urlpatterns = [
          name='draft_blog_posts'),
     path('blog/all_posts', views.all_posts,
          name='all_posts'),
+    path('blog/<int:pk>/delete_comment', views.delete_comment, name='delete_comment'),
 
 ]

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load blog_tags %}
+{% load thumbnail %}
+
+{% block content %}
+    <link href="{% static "css/analyse_image.css" %}" rel="stylesheet">
+    <div id="blog">
+        {% if image is None and img is None %}
+            <form action="{% url "images:analyse_image" %}" method="post" enctype='multipart/form-data'>
+                {{ image_form.as_p }}
+                {% csrf_token %}
+                <input name="upload_img" type="submit" value="загрузить изображение">
+            </form>
+        {% endif %}
+        {% if image is not None %}
+            <form action="{% url "images:analyse_image" %}?image_id={{ pk }}" method="post"
+                  enctype='multipart/form-data'>
+                {% csrf_token %}
+                <input name="analyse_img" type="submit" value="Запустить анализ">
+            </form>
+            <div class="profile-info">
+                {% if image is not None %}
+                    <img src="{{ image.image.url }}">
+                {% endif %}
+            </div>
+        {% endif %}
+        {% if wait %}
+             <a class="button"
+                   style="float: right; margin-left: 5px; margin-right: 5px; background-color: #609ab6"
+                   href="{% url "images:analyse_image" %}?image_loaded">Загрузить результат</a>
+        {% endif %}
+
+        {% if img is not None %}
+            <div class="profile-info">
+                <img src="{{ img }}">
+            </div>
+            <div style="height: 250px">
+                {% for d in img_data %}
+                    <div><div class='box'
+                              style="background-color: rgb({{d.r}},{{d.g}},{{d.b}});
+                                      display: inline"
+                ><span style="margin-left: 30px; display: inline">{{ d.model }}</span>
+{#                    <br>#}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+
+    </div>
+{% endblock %}

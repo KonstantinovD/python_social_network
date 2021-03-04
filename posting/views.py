@@ -235,6 +235,22 @@ def publish_post(request):
         return redirect('dashboard')
 
 
+@login_required
+@user_passes_test(lambda u: u.groups.filter(name='Moderator').exists(), )
+def delete_comment(request, pk):
+    if 'comment_id' in request.GET:
+        comment_id = request.GET['comment_id']
+        post = BlogPost.objects.get(pk=pk)
+        comment = Comment.objects.get(pk=comment_id)
+        if comment is not None:
+            create_action(request.user,
+                          'удалил ваш комментарий к статье \"' + post.title + '\"',
+                          comment.user)
+
+            comment.delete()
+        return redirect('post_detail', pk)
+
+
 # Используем два декоратора для функции. Декоратор <login_required> не даст неавторизованным пользователям
 # доступ к этому обработчику. Декоратор <require_POST> возвращает ошибку HttpResponseNotAllowed
 # В Django также реализованы декораторы <required_GET>, и <require_http_methods>, принимающий список разрешенных методов

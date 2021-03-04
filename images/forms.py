@@ -2,7 +2,7 @@ from urllib import request
 from django import forms
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
-from .models import Image
+from .models import Image, ImageDTO
 
 
 class ImageCreateForm(forms.ModelForm):
@@ -48,4 +48,10 @@ class ImageCreateForm(forms.ModelForm):
 # в него объект скачанного файла, ContentFile. Используется commit=False, чтобы покане сохранять объект в базу данных;
 # - при переопределении метода важно оставить стандартное поведение, поэтому сохраняем объект изображения в базу данных
 # только в том случае, если commit равен True.
+
+
+class ImageDTOForm(forms.ModelForm):
+    class Meta:
+        model = ImageDTO
+        fields = ('image',)
 

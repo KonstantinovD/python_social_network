@@ -45,3 +45,15 @@ class Image(models.Model):
 
     def get_absolute_url(self):
         return reverse('images:detail', args=[self.id, self.slug])
+
+
+class ImageDTO(models.Model):
+    image = models.ImageField(upload_to='images/%Y/%m/%d/', blank=True)
+
+
+class AnalyzedData(object):
+    def __init__(self):
+        self.r = 0
+        self.g = 0
+        self.b = 0
+        self.model = ''

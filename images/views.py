@@ -1,22 +1,98 @@
+import base64
+import os
+import time
+import uuid
+
+import numpy as np
+import requests
+from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import ImageCreateForm
-from .models import Image
+
+from bookmarks.settings import MEDIA_ROOT
+from .forms import ImageCreateForm, ImageDTOForm
+from .models import Image, ImageDTO, AnalyzedData
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from common.decorators import ajax_required
 from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from actions.utils import create_action
-import redis
 from django.conf import settings
+import cv2
+import json
+
+@login_required
+def analyse_image(request):
+    image_form = None
+    image = None
+    img_instance = None
+    pk = None
+    string = None
+    if request.method == 'GET':
+        if 'image_loaded' in request.GET:
+            img_url = request.session['image_url']
+            img_data = request.session['color_data']
 
 
-# Подключение к Redis.
-r = redis.StrictRedis(host=settings.REDIS_HOST,
-                      port=settings.REDIS_PORT,
-                      db=settings.REDIS_DB)
+            multiple_models_data = []
+
+            for value in img_data.values():
+                analysed_data = AnalyzedData()
+                analysed_data.model = value[0]
+                analysed_data.r = value[1]
+                analysed_data.g = value[2]
+                analysed_data.b = value[3]
+                multiple_models_data.append(analysed_data)
+
+
+            return render(request, 'neural/analyse_image.html',
+                          {'img': img_url, 'img_data': multiple_models_data})
+        else:
+            image_form = ImageDTOForm()
+
+    if request.method == 'POST':
+        if 'image_id' in request.GET:
+            image_id = request.GET['image_id']
+            image_dto = ImageDTO.objects.get(pk=image_id)
+
+            img = cv2.imread(image_dto.image.path)
+            # encode image as jpeg
+            _, img_encoded = cv2.imencode('.jpg', img)
+            # send http request with image and receive response
+            response = requests.post('http://127.0.0.1:5000/image',
+                                     data=img_encoded.tostring())
+            json_var = json.loads(response.text)
+
+            base64_bytes = json_var['imageBytes'].encode('ascii')
+            message_bytes = base64.b64decode(base64_bytes)
+
+            # npdecoded = base64.decodebytes(json_var['imageBytes']).encode('ascii')
+            nparr = np.fromstring(message_bytes, np.uint8)
+
+            res_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+            id = uuid.uuid1()
+            res_img_url = MEDIA_ROOT[:-1] + '\\analyse\\' + str(id.int) + '.jpg'
+
+            cv2.imwrite(res_img_url, res_img)
+
+            request.session['image_url'] = '/media/analyse/' + str(id.int) + '.jpg'
+            request.session['color_data'] = json_var['analyzed_data']
+
+            return render(request, 'neural/analyse_image.html', {'wait': True})
+
+
+        else:
+            img_saved = ImageDTOForm(instance=img_instance, data=request.POST, files=request.FILES)
+            image = img_saved.save()
+            pk = image.pk
+
+    return render(request, 'neural/analyse_image.html',
+                  {'image_form': image_form, 'image': image,
+                   'pk': pk})
+
 
 
 @login_required
@@ -50,24 +126,6 @@ def image_create(request):
 # - наконец, создает уведомление и перенаправляет пользователя на канонический URL новой картинки. Мы пока
 # не реализовали метод get_absolute_url() для модели Image, но добавим его чуть позже.
 
-
-def image_detail(request, id, slug):
-    image = get_object_or_404(Image, id=id, slug=slug)
-    # Увеличиваем количество просмотров картинки на 1.
-    total_views = r.incr('image:{}:views'.format(image.id))
-    # Увеличиваем рейтинг картинки на 1.
-    r.zincrby('image_ranking', image.id, 1)
-    return render(request, 'images/image/detail.html',
-                  {'section': 'images', 'image': image, 'total_views': total_views})
-# Используя Redis, мы добавили увеличение количества просмотров на 1 с помощью метода incr. Если ключ еще не существует,
-# то он будет создан, а только после этого добавится единица. Метод incr() возвращает итоговое значение, которое мы
-# сохраняем в переменную total_views и передаем в контекст шаблона. Формируем ключ для хранилища в виде
-# object-type:id:field, например image:33:id. Таким образом мы обезопасим себя от дублирования ключей
-# и непредвиденного поведения
-# ...
-# Мы используем метод zincrby(), чтобы работать с сортированным набором данных о количестве просмотров каждой картинки.
-# Сохраняем просмотры по ключу вида image_ranking и идентификатору картинки id. Таким образом, мы будем иметь актуальные
-# сведения о том, сколько раз каждое изображение было просмотрено пользователями сайта.
 
 
 # Используем два декоратора для функции. Декоратор <login_required> не даст неавторизованным пользователям
@@ -128,24 +186,4 @@ def image_list(request):
 # страницу, на которую добавлен список картинок из list_ajax.html.
 
 
-@login_required
-def image_ranking(request):
-    # Получаем набор рейтинга картинок (работает неверно).
-    image_ranking = r.zrange('image_ranking', 0, 1, desc=True)[:10]
-    image_ranking_ids = [int(id) for id in image_ranking]
-    # Получаем отсортированный список самых популярных картинок.
-    most_viewed = list(Image.objects.filter(id__in=image_ranking_ids))
-    most_viewed.sort(key=lambda x: image_ranking_ids.index(x.id))
-    return render(request, 'images/image/ranking.html',
-                  {'section': 'images', 'most_viewed': most_viewed})
-# В этом обработчике мы выполняем такие действия:
-#   1) используем метод zrange() для доступа к нескольким элементам сортированного списка. В качестве аргументов можно
-# передать начальный и конечный индексы необходимых элементов. Указав 0 начальным и 1 конечным, мы получим все элементы
-# из хранилища. Также есть возможность задать сортировку в убывающем порядке, передав аргумент desc=True.
-# После получения результата из хранилища Redis ограниваем количество объектов до 10 – [:10];
-#   2) сохраняем идентификаторы нужных картинок в списке image_ranking_ids. Затем обращаемся к модели Image и получаем
-# соответствующие этой переменной объекты картинок. При этом мы передаем QuerySet изображений в функцию list(), чтобы
-# выполнить сортировку методом sort();
-#   3) сортируем картинки по их идентификаторам и порядку в списке, полученном из Redis. Теперь самые просматриваемые
-# изображения расположены в нужном порядке, и мы можем показать их в шаблоне.
 

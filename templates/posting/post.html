@@ -98,14 +98,25 @@
 
             {{ comment.body }}
             likes: <span class="total_likes">{{ comment|get_comment_likes }}</span>, dislikes: <span class="total_dislikes">{{ comment|get_comment_dislikes }}</span>
-{#            {{ comment|get_user_preference:request.user }}#}
             {% with comment|get_user_preference:request.user as user_likes %}| {{ user_likes }} {% endwith %}
-            <br><a href="#" data-id="{{ comment.id }}"
-                   data-action="like" data-user="{{ request.user.id }}"
-                   class="like button" id="{{ comment.id }}-lk">LIKE</a>
+
+            <br>
+
             <a href="#" data-id="{{ comment.id }}" data-action="dislike" data-user="{{ request.user }}"
                class="like button" id="{{ comment.id }}-dslk">DISLIKE
             </a>
+            <a href="#" data-id="{{ comment.id }}"
+                   data-action="like" data-user="{{ request.user.id }}"
+                   class="like button" id="{{ comment.id }}-lk">LIKE</a>
+            {% if request.user|has_group:"Moderator" %}
+            <a href="{% url "delete_comment" post_detail.id %}?comment_id={{ comment.id }}"
+               style="float: right; margin-left: 5px; margin-right: 5px;
+               margin-top: -8px; background-color: #cc0033"
+               data-id="{{ comment.id }}" data-action="dislike" data-user="{{ request.user }}"
+               class="button" id="{{ comment.id }}-dslk">delete comment
+            </a>
+            {% endif %}
+
 
         </div>
         {% empty %} {# срабатывает, если for ни разу не отработал #}
