@@ -5,7 +5,7 @@
 
 {% block content %}
     <link href="{% static "css/analyse_image.css" %}" rel="stylesheet">
-    <div id="blog">
+    <div id="blog" style="display: block">
         {% if image is None and img is None %}
             <h2>Выберите изображение для анализа</h2>
             <form action="{% url "images:analyse_image" %}" method="post" enctype='multipart/form-data'>
@@ -19,10 +19,10 @@
         {% if image is not None %}
             <body onload="myFunction()" style="margin:0;">
             {% if wait %}
-                <form  action="{% url "images:analyse_image" %}?image_loaded" method="get">
+                <form action="{% url "images:analyse_image" %}?image_loaded" method="get">
                     <input name="image_loaded" type="submit"
                            value="Загрузить результат" class="start_analyze"
-                    style="background-color: #609ab6;">
+                           style="background-color: #609ab6;">
                 </form>
 
             {% else %}
@@ -42,20 +42,55 @@
         {% endif %}
 
 
-    {% if img is not None %}
-        <div class="profile-info">
-            <img src="{{ img }}">
-        </div>
-        <div style="height: 250px; display: inline">
-            {% for d in img_data %}
-                <div class='box'
-                     style="background-color: rgb({{ d.r }},{{ d.g }},{{ d.b }});
-                             display: inline"
-                ><span style="margin-left: 30px; display: inline">{{ d.model }}</span>
+        {% if img is not None %}
+            <div>
+                <div class="profile-info" style="width: 100%;">
+                    <img src="{{ img }}">
+                </div>
+            </div>
+            <div style="width: 100%;">
+                {% for d in img_data %}
+                    <div class='box' style="background-color: rgb({{ d.r }},{{ d.g }},{{ d.b }});">
+                    </div><p style="margin-left: 30px;">{{ d.model }}</p>
+                {% endfor %}
+            </div>
+            <div style="text-align: center">
+                <h2>Бронетехника на изображении</h2>
+            </div>
+            {% for postd in post_data %}
+                <div class="card-body" style="background-color: #ddffdd;
+                padding: 10px; margin-top: 20px">
+{#                <div class="card shadow bg-white" style="margin-bottom: 10px; margin-top: 10px">#}
+{#                    <div style="margin-top: 10px; margin-bottom: 10px;">#}
+                        <h2 style="display: inline">{{ postd.model_tag }}</h2>
+                        &nbsp&nbsp<a style="color: grey; float: right"
+                                     href="{% url "blog" %}?tag_value={{ postd.model_tag }}">
+                        <i>посмотреть все статьи</i></a>
+                        <br><br>
+{#                    </div>#}
+                    {% if postd.post is not None %}
+
+{#                            <div class="card-body" style="background-color: #ddffdd; padding: 10px">#}
+                                <h2 class="card-title" style="margin-top: 20px"><a
+                                        href="{% url 'post_detail' pk=postd.post.pk %}">{{ postd.post.title }}</a></h2>
+                                <p class="card-text" style="margin-bottom: 5px;"> {{ postd.post.body_summary|striptags }} </p>
+                                <hr>
+                                <div>
+                                    {% if postd.post.tags %}
+                                        <b>теги:</b>&nbsp;
+                                    {% endif %}
+                                    {% for tag in postd.post.tags %}
+                                        <a style="color: black"
+                                           href="{% url "blog" %}?tag_value={{ tag }}"
+                                        ><i>{{ tag }}</i></a>{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                    <div style="text-align: right;"><i>{{ postd.post.created_date }}</i></div>
+                                </div>
+{#                            </div>#}
+                    {% endif %}
                 </div>
             {% endfor %}
-        </div>
-    {% endif %}
+        {% endif %}
     </div>
 
 
@@ -63,8 +98,8 @@
 
 {% block domready %}
 
-$('input.start_analyze').click(function (e) {
-{#    alert('hello')#}
+    $('input.start_analyze').click(function (e) {
+    {#    alert('hello')#}
     document.getElementById("loader").style.display = "block";
-})
+    })
 {% endblock %}

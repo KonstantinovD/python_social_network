@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 from bookmarks.settings import MEDIA_ROOT
+from posting.models import BlogPost
 from .forms import ImageCreateForm, ImageDTOForm
 from .models import Image, ImageDTO, AnalyzedData
 from django.http import JsonResponse
@@ -23,6 +24,9 @@ from django.conf import settings
 import cv2
 import json
 
+from .utils import get_right_model_name
+
+
 @login_required
 def analyse_image(request):
     image_form = None
@@ -34,21 +38,33 @@ def analyse_image(request):
         if 'image_loaded' in request.GET:
             img_url = request.session['image_url']
             img_data = request.session['color_data']
-
-
             multiple_models_data = []
+            existing_models = []
+            post_data = []
+            posts_qs = BlogPost.objects.filter(basic=True).filter(status='published')
 
             for value in img_data.values():
                 analysed_data = AnalyzedData()
-                analysed_data.model = value[0]
+                all_models_array, complex_name = get_right_model_name(value[0])
+                analysed_data.model = complex_name
+
+                if complex_name not in existing_models:
+                    existing_models.append(complex_name)
+                    for model_tag in all_models_array:
+                        post_body = posts_qs.filter().filter(tags__icontains=model_tag).first()
+                        post_dict = {'model_tag': model_tag}
+                        if post_body is not None:
+                            post_dict['post'] = post_body
+                        post_data.append(post_dict)
+
                 analysed_data.r = value[1]
                 analysed_data.g = value[2]
                 analysed_data.b = value[3]
                 multiple_models_data.append(analysed_data)
 
-
             return render(request, 'neural/analyse_image.html',
-                          {'img': img_url, 'img_data': multiple_models_data})
+                          {'img': img_url, 'img_data': multiple_models_data,
+                           'post_data': post_data})
         else:
             image_form = ImageDTOForm()
 
