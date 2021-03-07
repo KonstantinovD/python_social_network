@@ -1,0 +1,44 @@
+div.comment{
+    height: 40px;
+    background-color: #E3FFE0;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border-color: #90FF90;
+    border-style: inset;
+    border-radius: 1px;
+    padding-top: 20px;
+}
+
+div.comment p{
+    display: inline;
+    margin-left: 10px;
+}
+
+div.comments_area{
+    margin-top: 15px;
+}
+
+a.like, a.dislike{
+    display: inline;
+    margin: 0;
+}
+
+span.dislike{
+    display: inline;
+    float:right;
+    color: #cc0033;
+}
+span.like{
+    display: inline;
+    float:right;
+    color: #00a74f;
+}
+
+
+a.like{
+    /*background-image: url("../../../media/resources/like.png");*/
+}
+
+a.dislike{
+    /*background-image: url("../../../media/resources/dislike.png");*/
+}

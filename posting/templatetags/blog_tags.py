@@ -7,7 +7,7 @@ register = template.Library()
 
 @register.inclusion_tag('posting/posts/latest_posts.html')
 def show_latest_posts(count=3):  # Чтобы задать другое количество статей, используйте {% show_latest_posts 3 %}
-    latest_posts = BlogPost.objects.all().order_by("-created_date")[:count]
+    latest_posts = BlogPost.objects.filter(status='published').order_by("-created_date")[:count]
     return {'latest_posts': latest_posts}  # функция тега возвращает словарь переменных вместо простого значения
 
 
@@ -46,6 +46,8 @@ def get_comment_dislikes(comment):
 
 @register.filter(takes_context=True, name='get_user_preference')
 def get_user_preference(comment, user):
+    if not user.is_authenticated:
+        return 0
     comment_like = comment.comment_likes.filter(user=user).first()
     if comment_like is None:
         return 0
@@ -90,3 +92,14 @@ def reword_user_action(action, user):
 @register.filter(name='is_published')
 def is_published(post):
     return post.status == 'published'
+
+
+@register.filter(name='get_user_published_posts_count')
+def get_user_published_posts_count(user):
+    latest_posts = BlogPost.objects.filter(author=user).filter(status='published')
+    return len(latest_posts)
+
+
+@register.filter(name='is_basic_article')
+def is_basic_article(post):
+    return post.basic

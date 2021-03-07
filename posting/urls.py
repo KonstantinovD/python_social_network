@@ -21,5 +21,7 @@ urlpatterns = [
     path('blog/all_posts', views.all_posts,
          name='all_posts'),
     path('blog/<int:pk>/delete_comment', views.delete_comment, name='delete_comment'),
-
+    path('blog/<int:pk>/modify_basic', views.modify_basic, name='modify_basic'),
+    path('blog/basic_posts', views.basic_posts,
+         name='basic_posts'),
 ]

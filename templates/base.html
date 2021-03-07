@@ -3,113 +3,150 @@
 {% load thumbnail %}
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>{% block title %}{% endblock %}</title>
-        <link href="{% static "css/base.css" %}" rel="stylesheet">
-    </head>
-    <body>
-        <div id="header">
-{# соединим все вместе, добавив ссылки на вход и выход в базовый шаблон. Чтобы отображать нужную ссылку, следует      #}
-{# определить, выполнил ли текущий пользователь вход в свой аккаунт или он является анонимным. Текущий пользователь   #}
-{# задается в объекте HttpRequest промежуточным слоем. Мы можем в любой момент обратиться к нему через request.user   #}
-{# и получим объект типа User. Неавторизованный пользователь является объектом типа AnonymousUser. Чтобы определить,  #}
-{# с каким типом пользователя мы имеем дело, достаточно обратиться к атрибуту is_authenticated.                       #}
-            <span class="logo">Bookmarks</span>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <link href="{% static "css/base.css" %}" rel="stylesheet">
+    <link href="{% static "css/header.css" %}" rel="stylesheet">
 
-            <ul class="menu">
-                <li {% if section == "s1" %}class="selected"{% endif %}>
-                    <a href="{% url "blog" %}?reset=true">НА ГЛАВНУЮ</a>
-                </li>
-                {% if request.user.is_authenticated %}
-                    <li {% if section == "dashboard" %} class="selected"{% endif %}>
-                        <a href="{% url "dashboard" %}">My dashboard</a>
-                    </li>
-                    <li {% if section == "people" %}class="selected"{% endif %}>
-                        <a href="{% url "user_list" %}">People</a>
-                    </li>
+
+</head>
+<body>
+<div id="header">
+    {# соединим все вместе, добавив ссылки на вход и выход в базовый шаблон. Чтобы отображать нужную ссылку, следует      #}
+    {# определить, выполнил ли текущий пользователь вход в свой аккаунт или он является анонимным. Текущий пользователь   #}
+    {# задается в объекте HttpRequest промежуточным слоем. Мы можем в любой момент обратиться к нему через request.user   #}
+    {# и получим объект типа User. Неавторизованный пользователь является объектом типа AnonymousUser. Чтобы определить,  #}
+    {# с каким типом пользователя мы имеем дело, достаточно обратиться к атрибуту is_authenticated.                       #}
+    <span class="logo">Armored</span>
+
+    <ul class="menu">
+        <li {% if section == "s1" %}class="selected"{% endif %}>
+            <a href="{% url "blog" %}?reset=true">НА ГЛАВНУЮ</a>
+        </li>
+        <li class="dropdown" {% if section == "s1" %}class="selected"{% endif %}>
+            <a href="javascript:void(0)" class="dropbtn">СТАТЬИ</a>
+            <div class="dropdown-content">
+                <a href="{% url "blog" %}?tag_value=Бронетехника"
+                   style="color: black">Бронетехника</a>
+                <a href="{% url "blog" %}?tag_value=Авиация"
+                   style="color: black">Авиация</a>
+                <a href="{% url "blog" %}?tag_value=Флот"
+                   style="color: black">Флот</a>
+                <a href="{% url "blog" %}?tag_value=Личности"
+                   style="color: black">Личности</a>
+                <a href="{% url "blog" %}?tag_value=События"
+                   style="color: black">События</a>
+                <a href="{% url "blog" %}?tag_value=Новости"
+                   style="color: black">Новости</a>
+                <a href="{% url "blog" %}?tag_value=Прочее"
+                   style="color: black">Прочее</a>
+            </div>
+        </li>
+        <li {% if section == "s1" %}class="selected"{% endif %}>
+            <a href="{% url "user_list" %}">УЧАСТНИКИ</a>
+        </li>
+        {% if request.user.is_authenticated %}
+            <li class="dropdown" {% if section == "s1" %}class="selected"{% endif %}>
+                <a href="javascript:void(0)" class="dropbtn">ПРОФИЛЬ</a>
+                <div class="dropdown-content">
+                    <a href="{{ request.user.get_absolute_url }}" style="color: black">Мой профиль</a>
+                    <a href="{% url "dashboard" %}" style="color: black">Dashboard</a>
+                </div>
+            </li>
+
+            <li class="dropdown" {% if section == "s1" %}class="selected"{% endif %}>
+                <a href="javascript:void(0)" class="dropbtn">ДЕЙСТВИЯ</a>
+                <div class="dropdown-content">
+                    <a href="{% url "images:analyse_image" %}" style="color: black">АНАЛИЗ ИЗОБРАЖЕНИЯ</a>
                     {% if request.user|has_group:"Publisher" %}
-                        <li {% if section == "s2" %}class="selected"{% endif %}>
-                            <a href="{% url "create_post" %}">ADD_ARTICLE</a>
-                        </li>
+                        <a href="{% url "create_post" %}" style="color: black">ДОБАВИТЬ СТАТЬЮ</a>
                     {% endif %}
+                </div>
+            </li>
 
-                    {% if request.user|has_group:"Moderator" %}
-                        <li {% if section == "s2" %}class="selected"{% endif %}>
-                            <a href="{% url "not_published_blog_posts" %}">ALL_UNPUBLISHED</a>
-                        </li>
-                        <li {% if section == "s2" %}class="selected"{% endif %}>
-                            <a href="{% url "draft_blog_posts" %}">ALL_DRAFT</a>
-                        </li>
-                        <li {% if section == "s2" %}class="selected"{% endif %}>
-                            <a href="{% url "all_posts" %}">ALL_ARTICLES</a>
-                        </li>
-                    {% endif %}
+            {% if request.user|has_group:"Moderator" %}
+                <li class="dropdown" {% if section == "s1" %}class="selected"{% endif %}>
+                    <a href="javascript:void(0)" class="dropbtn">АДМИНИСТРИРОВАНИЕ</a>
+                    <div class="dropdown-content">
+                        <a href="{% url "not_published_blog_posts" %}"
+                           style="color: black">Unpublished articles</a>
+                        <a href="{% url "draft_blog_posts" %}"
+                           style="color: black">Draft articles</a>
+                        <a href="{% url "basic_posts" %}"
+                           style="color: black">Basic articles</a>
+                        <a href="{% url "all_posts" %}"
+                           style="color: black">All articles</a>
+                    </div>
+                </li>
+            {% endif %}
 
 
 
-                {% endif %}
-            </ul>
+        {% endif %}
+    </ul>
 
 
-            <span class="user">
+    <span class="user">
                 {% if request.user.is_authenticated %}
-{#                    Hello {{ request.user.first_name }},#}
+                    {#                    Hello {{ request.user.first_name }},#}
                     <a href="{% url "logout" %}">Logout</a>
                 {% else %}
                     <a href="{% url "login" %}">Log-in</a>
                 {% endif %}
             </span>
-        </div>
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li class="{{ message.tags }}">
-                        {{ message|safe }}
-                        <a href="#" class="close">x</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-        <div id="content">
-            {% block content %}{% endblock %}
-        </div>
+</div>
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li class="{{ message.tags }}">
+                {{ message|safe }}
+                <a href="#" class="close">x</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+<div id="content">
+    {% block content %}{% endblock %}
+</div>
 
-        <div id="sidebar">
-            {% block sidebar %}{% endblock %}
-        </div>
+<div id="sidebar">
+    {% block sidebar %}{% endblock %}
+</div>
 
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">
-        </script>  {# Мы подключили библиотеку jQuery из CDN Google #}
-        <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js">
-        </script>
-        <script>
-            // получает значение csrftoken с помощью Cookies.get();
-            var csrftoken = Cookies.get('csrftoken');
-            // добавляет функцию csrfSafeMethod(), которая определяет, нужно ли проверять CSRF-токен для текущего
-            // HTTP-метода. Методы, которые не требуют проверки, – GET, HEAD, OPTIONS, TRACE
-            function csrfSafeMethod(method){
-                // Для этих методов токен не будет подставляться в заголовок.
-                return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">
+</script>
+{# Мы подключили библиотеку jQuery из CDN Google #}
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js">
+</script>
+<script>
+    // получает значение csrftoken с помощью Cookies.get();
+    var csrftoken = Cookies.get('csrftoken');
+    // добавляет функцию csrfSafeMethod(), которая определяет, нужно ли проверять CSRF-токен для текущего
+    // HTTP-метода. Методы, которые не требуют проверки, – GET, HEAD, OPTIONS, TRACE
+    function csrfSafeMethod(method) {
+        // Для этих методов токен не будет подставляться в заголовок.
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    // настраивает AJAX-запросы методом $.ajaxSetup(). Перед отправкой каждого AJAX-запроса проверяет, нужно ли
+    // выставлять CSRF-токен. Если нужно, то задает в заголовке X-CSRFToken запроса значение токена,
+    // полученное из куков. В нашем случае CSRF-токен будет добавляться в заголовки запросов методами POST и PUT
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
             }
-            // настраивает AJAX-запросы методом $.ajaxSetup(). Перед отправкой каждого AJAX-запроса проверяет, нужно ли
-            // выставлять CSRF-токен. Если нужно, то задает в заголовке X-CSRFToken запроса значение токена,
-            // полученное из куков. В нашем случае CSRF-токен будет добавляться в заголовки запросов методами POST и PUT
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                    }
-                }
-            });
-            $(document).ready(function(){
-                {% block domready %}{% endblock %}
-            });
-        </script>
+        }
+    });
+    $(document).ready(function () {
+        {% block domready %}{% endblock %}
+    });
+</script>
 {# Мы добавили тег <script> для использования JavaScript-кода. Метод $(document). ready() – это функция jQuery, она получает #}
 {#  в качестве аргумента код, который будет выполнен, когда удастся выстроить иерархию документа (Document Object Model – DOM). #}
 {#  Браузер формирует DOM в виде древовидной структуры после загрузки страницы. Передавая выполняемый код в метод ready(), #}
 {#  гарантируем, что элементы, с которыми мы будем взаимодействовать, будут загружены и доступны в DOM (наш код выполнится только #}
 {#  после того, как браузер сформирует его). Внутри обработчика мы добавили блочный тег Django и назвали его domready. #}
 {#  Так дочерние шаблоны смогут добавлять собственный JavaScript-код, который должен выполняться после формирования DOM.#}
-    </body>
+</body>
 </html>

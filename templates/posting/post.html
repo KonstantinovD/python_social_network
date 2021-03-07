@@ -3,138 +3,171 @@
 {% load blog_tags %}
 {% load thumbnail %}
 
-<header class="masthead text-center text-white d-flex" id="mastheadPost" style="background-image: url(/media/{{ post_detail.background_image }})">
-    <div class="container my-auto">
-        <div class="row">
-            <div class="col-lg-10 mx-auto">
-                <h1 style="font-family: 'Fira Code', Impact, sans-serif">
-                    {{ post_detail.title }}
-                </h1>
-            </div>
-        </div>
-    </div>
-</header>
-
 {% block content %}
-<div id="blog">
-    <h1>{{ post_detail.title }}</h1>
-    <div style="height: 50px">
-        {% if post_detail|is_published %}
-            {% if request.user|has_group:"Moderator" %}
+    <div id="blog">
+        <link href="{% static "css/post.css" %}" rel="stylesheet">
+        <h1>{{ post_detail.title }}</h1>
+        <div style="height: 50px">
+            {% if post_detail|is_published %}
+                {% if request.user|has_group:"Moderator" %}
+                    <a class="button"
+                       style="float: right; margin-left: 5px; margin-right: 5px; background-color: #cc0033"
+                       href="{% url "delete_post" %}?post_id={{ post_detail.id }}">Удалить</a>
+                {% endif %}
+                {% if request.user|has_group:"Moderator" %}
+                    <a class="button"
+                       style="float: right; margin-left: 5px; margin-right: 5px; background-color: #0b0080"
+                       href="{% url "modify_basic" pk=post_detail.id %}">
+                        {% if post_detail|is_basic_article %}unmake basic{% else %}make basic{% endif %}
+                            </a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    <a style="float: right ; margin-left: 5px; margin-right: 5px;"
+                       href="#" data-id="{{ post_detail.id }}"
+                       data-action="to_favorites" data-user="{{ request.user.id }}"
+                       class="favorite button" id="{{ post_detail.id }}">
+                        {% if post_detail.id in request.user.profile.favorites %}
+                            удалить из избранного
+                        {% else %}
+                            в избранное
+                        {% endif %}
+                    </a>
+                {% endif %}
+            {% else %}
+                <h2 style="display: inline">Status:
+                    <p style="display: inline; color: #CC3434">{{ post_detail.status }}</p></h2>
                 <a class="button"
                    style="float: right; margin-left: 5px; margin-right: 5px; background-color: #cc0033"
                    href="{% url "delete_post" %}?post_id={{ post_detail.id }}">Удалить</a>
-            {% endif %}
-            <a style="float: right ; margin-left: 5px; margin-right: 5px;"
-               href="#" data-id="{{ post_detail.id }}"
-               data-action="to_favorites" data-user="{{ request.user.id }}"
-               class="favorite button" id="{{ post_detail.id }}">
-                {% if post_detail.id in request.user.profile.favorites %}
-                    удалить из избранного
-                {% else %}
-                    в избранное
+                {% if request.user|has_not_group:"Moderator" %}
+                    <a class="button"
+                       style="float: right; margin-left: 5px; margin-right: 5px; background-color: #1586de"
+                       href="{% url "update_post" %}?post_id={{ post_detail.id }}">Редактировать</a>
                 {% endif %}
-            </a>
-        {% else %}
-            <h2 style="display: inline">Status:
-                <p style="display: inline; color: #CC3434">{{ post_detail.status }}</p></h2>
-            <a class="button"
-               style="float: right; margin-left: 5px; margin-right: 5px; background-color: #cc0033"
-               href="{% url "delete_post" %}?post_id={{ post_detail.id }}">Удалить</a>
-            {% if request.user|has_not_group:"Moderator" %}
-            <a class="button"
-               style="float: right; margin-left: 5px; margin-right: 5px; background-color: #1586de"
-               href="{% url "update_post" %}?post_id={{ post_detail.id }}">Редактировать</a>
+                {% if request.user|has_group:"Moderator" %}
+                    <a class="button"
+                       style="float: right; margin-left: 5px; margin-right: 5px; background-color: darkorange"
+                       href="{% url "reject_post" %}?post_id={{ post_detail.id }}">Отклонить</a>
+                {% endif %}
+                {% if request.user|has_group:"Moderator" %}
+                    <a class="button"
+                       style="float: right; margin-left: 5px; margin-right: 5px; background-color: #0ac33e"
+                       href="{% url "publish_post" %}?post_id={{ post_detail.id }}">Опубликовать</a>
+                {% endif %}
             {% endif %}
-            {% if request.user|has_group:"Moderator" %}
-            <a class="button"
-               style="float: right; margin-left: 5px; margin-right: 5px; background-color: darkorange"
-               href="{% url "reject_post" %}?post_id={{ post_detail.id }}">Отклонить</a>
-            {% endif %}
-            {% if request.user|has_group:"Moderator" %}
-            <a class="button"
-               style="float: right; margin-left: 5px; margin-right: 5px; background-color: #0ac33e"
-               href="{% url "publish_post" %}?post_id={{ post_detail.id }}">Опубликовать</a>
-            {% endif %}
-        {% endif %}
-    </div>
-    <br>
-
-    {% with user=post_detail.author profile=post_detail.author.profile %}
-        {% if profile.photo %}
-            {% thumbnail user.profile.photo "80x80" crop="100%" as im %}
-                <a href="{{ user.get_absolute_url }}">
-                    <img src="{{ im.url }}" alt="{{ user|get_user_full_name }}" class="user-detail">
-                </a>
-            {% endthumbnail %}
-        {% endif %}
-        <br><p>&nbsp;&nbsp;&nbsp;&nbsp;{{ user_name }}</p>
-    <br>
-    {% endwith %}
-
-
-    <p class="card-text" id="post"> {{ post_detail.formatted_markdown|safe }} </p>
-    <div class="text-muted text-right" style="margin-top: 4rem"> {{ post_detail.created_date }}</div>
-
-
-    <div>
-        {% if post_detail|is_published %}
-        {% with comments.count as total_comments %} {# строка с количеством комментариев #}
-            <h3>Комметариев: {{ total_comments }}</h3>
-        {% endwith %}
-        {% if request.user|has_group:"BaseUser" %}
-
-        <form action="./comment" method="post">
-            <p>
-                <h3>Оставить комментарий</h3>
-                <textarea name="body" cols="40" rows="10" required="" id="id_body"></textarea>
-            </p>
-            {% csrf_token %}
-            <input name="create_comment" type="submit"  value="Опубликовать" class="testclass" >
-        </form>
-        {% endif %}
-        {% for comment in comments %}
-        <div class="comment">
-
-            {{ comment.body }}
-            likes: <span class="total_likes">{{ comment|get_comment_likes }}</span>, dislikes: <span class="total_dislikes">{{ comment|get_comment_dislikes }}</span>
-            {% with comment|get_user_preference:request.user as user_likes %}| {{ user_likes }} {% endwith %}
-
-            <br>
-
-            <a href="#" data-id="{{ comment.id }}" data-action="dislike" data-user="{{ request.user }}"
-               class="like button" id="{{ comment.id }}-dslk">DISLIKE
-            </a>
-            <a href="#" data-id="{{ comment.id }}"
-                   data-action="like" data-user="{{ request.user.id }}"
-                   class="like button" id="{{ comment.id }}-lk">LIKE</a>
-            {% if request.user|has_group:"Moderator" %}
-            <a href="{% url "delete_comment" post_detail.id %}?comment_id={{ comment.id }}"
-               style="float: right; margin-left: 5px; margin-right: 5px;
-               margin-top: -8px; background-color: #cc0033"
-               data-id="{{ comment.id }}" data-action="dislike" data-user="{{ request.user }}"
-               class="button" id="{{ comment.id }}-dslk">delete comment
-            </a>
-            {% endif %}
-
-
         </div>
-        {% empty %} {# срабатывает, если for ни разу не отработал #}
-            <p>There are no comments yet.</p>
-        {% endfor %}
-    {% endif %}
+        <br>
+
+        {% with user=post_detail.author profile=post_detail.author.profile %}
+            {% if profile.photo %}
+                {% thumbnail user.profile.photo "80x80" crop="100%" as im %}
+                    <a href="{{ user.get_absolute_url }}">
+                        <img src="{{ im.url }}" alt="{{ user|get_user_full_name }}" class="user-detail">
+                    </a>
+                {% endthumbnail %}
+            {% endif %}
+            <br><p>&nbsp;&nbsp;&nbsp;&nbsp;{{ user_name }}</p>
+            <br>
+        {% endwith %}
+
+
+        <p class="card-text" id="post"> {{ post_detail.formatted_markdown|safe }} </p>
+        <hr>
+        <div class="text-muted text-right" style="margin-bottom: 4rem">
+            <i style="float: right">{{ post_detail.created_date }}</i>
+        </div>
+
+        <div>
+            {% if post_detail|is_published %}
+                {% with comments.count as total_comments %} {# строка с количеством комментариев #}
+                    <h3>Комметариев: {{ total_comments }}</h3>
+                {% endwith %}
+                {% if request.user|has_group:"BaseUser" %}
+
+                    <form action="./comment" method="post">
+                        <p>
+                        <h3>Оставить комментарий</h3>
+                        <textarea name="body" cols="40" rows="4" required="" id="id_body"></textarea>
+                        </p>
+                        {% csrf_token %}
+                        <input name="create_comment" type="submit" value="Опубликовать" class="testclass"
+                               style="padding: 5px 20px; border-radius: 10px">
+                    </form>
+                {% endif %}
+                <div class="comments_area">
+                    {% for comment in comments %}
+
+                        {% if comment.user.profile.photo %}
+                            {% thumbnail comment.user.profile.photo "20x20" crop="100%" as im %}
+                                <a href="{{ comment.user.get_absolute_url }}">
+                                    <img src="{{ im.url }}" alt="{{ comment.user|get_user_full_name }}"
+                                         class="user-detail">
+                                </a>
+                            {% endthumbnail %}
+                        {% endif %}
+
+                        <a style="color: black"
+                           href="{{ comment.user.get_absolute_url }}">&nbsp;&nbsp;{{ comment.user|get_user_full_name }}</a>
+                        <div class="comment">
+                            <p>{{ comment.body }}</p>
+                            {% with comment|get_user_preference:request.user as user_likes %}
+                                <span class="dislike ds-{{ comment.id }}">&nbsp;{{ comment|get_comment_dislikes }}&nbsp;</span>
+                                <a href="#" data-id="{{ comment.id }}" data-action="dislike"
+                                   data-user="{{ request.user.id }}" class="like"
+                                   id="ds-{{ comment.id }}">
+                                    {% if user_likes < 0 %}
+                                        <img src="../../../media/resources/dislikeuser.png" class="ds-{{ comment.id }}"
+                                             id="imds-{{ comment.id }}" style="mix-blend-mode: multiply;
+                                                {% if not user.is_authenticated %}cursor: not-allowed;{% endif %}">
+                                    {% else %}
+                                        <img src="../../../media/resources/dislike.png" class="ds-{{ comment.id }}"
+                                             id="imds-{{ comment.id }}" style="mix-blend-mode: multiply;
+                                                {% if not user.is_authenticated %}cursor: not-allowed;{% endif %}">
+                                    {% endif %}
+                                </a>
+                                <span class="like lk-{{ comment.id }}">&nbsp;{{ comment|get_comment_likes }}&nbsp;</span>
+                                <a href="#" data-id="{{ comment.id }}" data-action="like"
+                                   data-user="{{ request.user.id }}" class="like"
+                                   id="lk-{{ comment.id }}">
+                                    {% if user_likes > 0 %}
+                                        <img src="../../../media/resources/likeuser.png" class="lk-{{ comment.id }}"
+                                             id="imlk-{{ comment.id }}" style="mix-blend-mode: multiply;
+                                                {% if not user.is_authenticated %}cursor: not-allowed;{% endif %}">
+                                    {% else %}
+                                        <img src="../../../media/resources/like.png" class="lk-{{ comment.id }}"
+                                             id="imlk-{{ comment.id }}" style="mix-blend-mode: multiply;
+                                                {% if not user.is_authenticated %}cursor: not-allowed;{% endif %}">
+                                    {% endif %}
+
+
+                                </a>
+
+                            {% endwith %}
+                            {% if request.user|has_group:"Moderator" %}
+                                <a href="{% url "delete_comment" post_detail.id %}?comment_id={{ comment.id }}"
+                                   style="float: right; margin-left: 5px; margin-right: 5px;
+               margin-top: -8px; background-color: #cc0033;
+                text-transform: none; padding: 10px"
+                                   data-id="{{ comment.id }}" data-action="dislike" data-user="{{ request.user }}"
+                                   class="button" id="{{ comment.id }}-dslk">delete comment
+                                </a>
+                            {% endif %}
+
+
+                        </div>
+                    {% empty %} {# срабатывает, если for ни разу не отработал #}
+                        <p>There are no comments yet.</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
     </div>
-</div>
-
-
-
-
 {% endblock %}
 
 {% block domready %}
-  //- 1. используем селектор $('a.like'), чтобы найти все элементы "a", у которых есть css-класс like;
-  //- 2. определяем функцию – обработчик события click. Она будет вызываться при каждом клике на ссылке like/unlike
-  $('a.like').click(function(e){
+    //- 1. используем селектор $('a.like'), чтобы найти все элементы "a", у которых есть css-класс like;
+    //- 2. определяем функцию – обработчик события click. Она будет вызываться при каждом клике на ссылке like/unlike
+    $('a.like').click(function(e){
     //- alert(e.target.id)
     //- 3. внутри обработчика используем e.preventDefault(), чтобы отменить поведение по умолчанию для ссылки "a"
     //- (при клике пользователь не будет перенаправлен на страницу по ссылке);
@@ -143,44 +176,75 @@
     //- $.get() для отправки GET-запроса и $.ajax() (в нем мы можем указать метод запроса);
     //- 5. используем шаблонный тег Django { "url" }, чтобы получить URL обработчика AJAX-запроса на сервере;
     $.post('{% url "comment_like" %}',
-      {
+    {
     //- 6. формируем POST-параметры для обработчика на сервере (ID и action). Получаем их значения
     //- из атрибутов data-id и data-action элемента "a";
-        id: $(this).data('id'),
-        action: $(this).data('action'),
-        //user: $(this).data('user')
-      },
+    id: $(this).data('id'),
+    action: $(this).data('action'),
+    //user: $(this).data('user')
+    },
     //- 7. определяем функцию, которая будет вызвана при успешном выполнении запроса. Она получает в качестве аргумента
     //- data данные из тела ответа
-      function(data){
+    function(data){
     //- 8. проверяем атрибут status полученных в ответе данных – равен ли он значению ok. Если равен, заменяем атрибут
     // data-action и текст ссылки на противоположные. Так пользователь сможет отменить свое действие;
-        if (data['status'] == 'ok')
-        {
-            alert(e.target.id)
-            //- e.target.style.backgroundColor = "#FFFFFF"
-            //- var previous_likes = parseInt($('span.total_likes').text());
-          //- alert(previous_likes);
-        }
-      }
-    );
-  });
+    if (data['status'] == 'ok')
+    {
+    span_target_id = e.target.id.slice(2)
+    var previous_number = parseInt($('span.'+span_target_id).text());
 
-  $('a.favorite').click(function(e){
+    if (data['method'] == 'add') {
+    previous_number = previous_number + 1;
+    if (data['action'] == 'like'){
+    document.getElementById(e.target.id).src = "../../../media/resources/likeuser.png";
+    var like_id = e.target.id;
+    var dislike_id = like_id.replace("lk", "ds");
+    document.getElementById(dislike_id).src = "../../../media/resources/dislike.png";
+    }
+    else {
+    document.getElementById(e.target.id).src = "../../../media/resources/dislikeuser.png";
+    var dislike_id = e.target.id;
+    var like_id = dislike_id.replace("ds", "lk");
+    document.getElementById(like_id).src = "../../../media/resources/like.png";
+    }
+    }
+    else {
+    previous_number = previous_number - 1;
+    if (data['action'] == 'like'){
+    document.getElementById(e.target.id).src = "../../../media/resources/like.png";
+    }
+    else {
+    document.getElementById(e.target.id).src = "../../../media/resources/dislike.png";
+    }
+    }
+
+
+    $('span.'+span_target_id).text("\u00a0"+previous_number+"\u00a0");
+
+    //- alert(previous_number)
+    //- e.target.style.backgroundColor = "#FFFFFF"
+    //- var previous_likes = parseInt($('span.total_likes').text());
+    //- alert(previous_likes);
+    }
+    }
+    );
+    });
+
+    $('a.favorite').click(function(e){
     e.preventDefault();
     $.post('{% url "article_favorite" %}',
-      {
-        id: $(this).data('id'),
-        action: $(this).data('action'),
-      },
-      function(data){
-        if (data['status'] == 'ok')
-        {
-		  var previous_action = e.target.innerHTML;
-          e.target.innerHTML = previous_action == 'в избранное' ? 'удалить из избранного' : 'в избранное';
-        }
-      }
+    {
+    id: $(this).data('id'),
+    action: $(this).data('action'),
+    },
+    function(data){
+    if (data['status'] == 'ok')
+    {
+    var previous_action = e.target.innerHTML;
+    e.target.innerHTML = previous_action == 'в избранное' ? 'удалить из избранного' : 'в избранное';
+    }
+    }
     );
-  });
+    });
 
 {% endblock %}v

@@ -7,45 +7,64 @@
     <link href="{% static "css/analyse_image.css" %}" rel="stylesheet">
     <div id="blog">
         {% if image is None and img is None %}
+            <h2>Выберите изображение для анализа</h2>
             <form action="{% url "images:analyse_image" %}" method="post" enctype='multipart/form-data'>
-                {{ image_form.as_p }}
+                <p>
+                    <input type="file" name="image" accept="image/*" id="id_image">
+                </p>
                 {% csrf_token %}
                 <input name="upload_img" type="submit" value="загрузить изображение">
             </form>
         {% endif %}
         {% if image is not None %}
-            <form action="{% url "images:analyse_image" %}?image_id={{ pk }}" method="post"
-                  enctype='multipart/form-data'>
-                {% csrf_token %}
-                <input name="analyse_img" type="submit" value="Запустить анализ">
-            </form>
-            <div class="profile-info">
+            <body onload="myFunction()" style="margin:0;">
+            {% if wait %}
+                <form  action="{% url "images:analyse_image" %}?image_loaded" method="get">
+                    <input name="image_loaded" type="submit"
+                           value="Загрузить результат" class="start_analyze"
+                    style="background-color: #609ab6;">
+                </form>
+
+            {% else %}
+                <form action="{% url "images:analyse_image" %}?image_id={{ pk }}" method="post"
+                      enctype='multipart/form-data'>
+                    {% csrf_token %}
+                    <input name="analyse_img" type="submit"
+                           value="Запустить анализ" class="start_analyze">
+                </form>
+            {% endif %}
+            <div class="profile-info" style="padding-bottom: 50px;">
                 {% if image is not None %}
                     <img src="{{ image.image.url }}">
                 {% endif %}
             </div>
-        {% endif %}
-        {% if wait %}
-             <a class="button"
-                   style="float: right; margin-left: 5px; margin-right: 5px; background-color: #609ab6"
-                   href="{% url "images:analyse_image" %}?image_loaded">Загрузить результат</a>
+            <div class="loader" id="loader" style="display: none"></div>
         {% endif %}
 
-        {% if img is not None %}
-            <div class="profile-info">
-                <img src="{{ img }}">
-            </div>
-            <div style="height: 250px">
-                {% for d in img_data %}
-                    <div><div class='box'
-                              style="background-color: rgb({{d.r}},{{d.g}},{{d.b}});
-                                      display: inline"
+
+    {% if img is not None %}
+        <div class="profile-info">
+            <img src="{{ img }}">
+        </div>
+        <div style="height: 250px; display: inline">
+            {% for d in img_data %}
+                <div class='box'
+                     style="background-color: rgb({{ d.r }},{{ d.g }},{{ d.b }});
+                             display: inline"
                 ><span style="margin-left: 30px; display: inline">{{ d.model }}</span>
-{#                    <br>#}
-                {% endfor %}
-            </div>
-        {% endif %}
-
-
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
     </div>
+
+
+{% endblock %}
+
+{% block domready %}
+
+$('input.start_analyze').click(function (e) {
+{#    alert('hello')#}
+    document.getElementById("loader").style.display = "block";
+})
 {% endblock %}

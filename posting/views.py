@@ -10,7 +10,7 @@ from .forms import *
 from .models import BlogPost, Tag, Preference
 from .postdetails.postgetails import fill_new_comment_data, process_post_request
 from .utils import create_tag_if_not_exist, get_posts_paginated, apply_post_filter
-from posting.templatetags.blog_tags import get_user_full_name, has_group
+from posting.templatetags.blog_tags import get_user_full_name, has_group, get_user_preference
 
 
 def blog_posts(request):
@@ -94,6 +94,23 @@ def all_posts(request):
     search_content_form = SearchContentForm()
     search_tag_form = SearchTagForm()
 
+    return render(request, 'posting/blog.html',
+                  {'posts': posts,
+                   'search_content_form': search_content_form,
+                   'search_tag_form': search_tag_form,
+                   'page': page,
+                   'all_tags': all_tags
+                   })
+
+@login_required
+@user_passes_test(lambda u: u.groups.filter(name='Moderator').exists(), )
+def basic_posts(request):
+    posts = BlogPost.objects.filter(basic=True).filter(status='published')
+
+    posts, page = get_posts_paginated(request, posts)
+    all_tags = Tag.objects.all().order_by('name')
+    search_content_form = SearchContentForm()
+    search_tag_form = SearchTagForm()
     return render(request, 'posting/blog.html',
                   {'posts': posts,
                    'search_content_form': search_content_form,
@@ -251,6 +268,19 @@ def delete_comment(request, pk):
         return redirect('post_detail', pk)
 
 
+@login_required
+@user_passes_test(lambda u: u.groups.filter(name='Moderator').exists(), )
+def modify_basic(request, pk):
+    atricle = BlogPost.objects.filter(pk=pk).first()
+    if atricle.basic:
+        atricle.basic = False
+        atricle.save()
+    elif not atricle.basic:
+        atricle.basic = True
+        atricle.save()
+    return redirect('post_detail', pk)
+
+
 # Используем два декоратора для функции. Декоратор <login_required> не даст неавторизованным пользователям
 # доступ к этому обработчику. Декоратор <require_POST> возвращает ошибку HttpResponseNotAllowed
 # В Django также реализованы декораторы <required_GET>, и <require_http_methods>, принимающий список разрешенных методов
@@ -266,7 +296,6 @@ def comment_like(request):
         try:
             comment = Comment.objects.get(id=comment_id)
             comment_like = comment.comment_likes.filter(user=request.user).first()
-
             # Если вы вызываете add() и передаете в него пользователя, который уже связан с текущей картинкой, дубликат
             # не будет создан. Аналогично при вызове remove() и попытке удалить пользователя, который не связан с
             # изображением, ошибки нет. Еще один полезный метод (many to many) – clear(). Он удаляет все отношения

@@ -6,6 +6,6 @@ class UserGroupNames(object):
     MODERATOR = 'Moderator'
 
 
-POST_COUNT_ON_PAGE = 3
+POST_COUNT_ON_PAGE = 6
 
 

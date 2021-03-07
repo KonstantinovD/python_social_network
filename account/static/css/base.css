@@ -68,6 +68,10 @@ ol {
     font-weight:bold;
 }
 
+#header a.listlink {
+    color: black;
+}
+
 #header a {
     color:#f3f7cc;
 }

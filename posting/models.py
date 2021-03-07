@@ -8,7 +8,7 @@ from django.urls import reverse
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 from taggit.managers import TaggableManager
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField, HStoreField
 import json
 
 # Create your models here.
@@ -44,6 +44,8 @@ class BlogPost(DateCreateModMixin):
                       size=8, default=[], blank=True)
 
     published_date = models.DateTimeField(blank=True, null=True)
+
+    basic = models.BooleanField(default=False)
 
     def formatted_markdown(self):
         return markdownify(self.body)

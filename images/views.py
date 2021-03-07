@@ -81,7 +81,8 @@ def analyse_image(request):
             request.session['image_url'] = '/media/analyse/' + str(id.int) + '.jpg'
             request.session['color_data'] = json_var['analyzed_data']
 
-            return render(request, 'neural/analyse_image.html', {'wait': True})
+            return render(request, 'neural/analyse_image.html',
+                          {'wait': True, 'image': image_dto})
 
 
         else:
