@@ -25,7 +25,7 @@
         {% for post in unpublished %}
             <div class="card shadow bg-white">
                 <div class="card-body">
-                    <h2 style="display: inline" class="card-title"><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
+                    <h2 style="display: inline" class="card-title"><a class="light_green_header" href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
                     <i style="float: right">{{ post.created_date }}</i>
                 </div>
                 <br>

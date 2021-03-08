@@ -63,7 +63,7 @@
     <div style="margin-bottom: 20px">
         <div>
             <h2 style="display: inline">Опубликованные статьи</h2>
-            &nbsp&nbsp<a style="color: grey; float: right" href="{% url "blog" %}?author_id={{ user.id }}">
+            &nbsp&nbsp<a style="color: #5d5d5d; float: right" href="{% url "blog" %}?author_id={{ user.id }}">
             <i>посмотреть все</i></a>
             <br><br>
         </div>
@@ -72,7 +72,7 @@
             <div class="card shadow bg-white" style="margin-bottom: 10px; margin-top: 10px">
                 <div class="card-body" style="background-color: #ddffdd; padding: 10px">
                     <h2 class="card-title" style="margin-top: 20px"><a
-                            href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
+                            class="light_green_header" href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
                     <p class="card-text" style="margin-bottom: 5px;"> {{ post.body_summary|striptags }} </p>
                     <hr>
                     <div>
@@ -96,7 +96,7 @@
     <div>
         <div>
             <h2 style="display: inline">В избранном</h2>
-            &nbsp&nbsp<a style="color: grey; float: right"
+            &nbsp&nbsp<a style="color: #5d5d5d; float: right"
                          href="{% url "blog" %}?post_ids={{ user.profile.favorites }}">
             <i>посмотреть все</i></a>
             <br><br>
@@ -105,7 +105,7 @@
             <div class="card shadow bg-white" style="margin-bottom: 10px; margin-top: 10px">
                 <div class="card-body" style="background-color: #ddffdd; padding: 10px">
                     <h2 class="card-title" style="margin-top: 20px"><a
-                            href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
+                            class="light_green_header" href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
                     <p class="card-text" style="margin-bottom: 5px;"> {{ post.body_summary|striptags }} </p>
                     <hr>
                     <div>

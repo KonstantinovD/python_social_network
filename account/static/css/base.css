@@ -11,12 +11,12 @@ p {
 }
 
 a {
-    color:#12c064;
+    color:#035529;
     text-decoration:none;
 }
 
 a:hover {
-    color:#00a74f;
+    color:#035529;
 }
 
 h1, h2, h3, h4, h5 , h6 { font-family: 'Muli', sans-serif; font-weight:normal; }
@@ -38,9 +38,9 @@ ol {
 #header {
     padding:10px 100px;
     font-size:14px;
-    background:#12c064;
+    background:#33AF6D;
     color:#fff;
-    border-bottom:4px solid #1cdf78;
+    border-bottom:4px solid #33AF6D;
     overflow:auto;
 }
 
@@ -209,8 +209,8 @@ ul.messages li a.close {
     overflow:auto;
 }
 .count {
-    color:#aaa;
-    border:3px solid #bbb;
+    color:#00863E;
+    border:3px solid #00863E;
     border-radius:26px;
     padding:10px 20px;
     margin:20px 10px 0;
@@ -223,7 +223,7 @@ a.like, a.follow { float:right; margin-top:-8px; }
     width:220px;
     height:300px;
     margin:0 10px 10px 10px;
-    border-top:8px solid #12c064;
+    border-top:8px solid #33AF6D;
     background:#eee;
 }
 #image-list img { width:220px; height:220px; }
@@ -278,4 +278,8 @@ img.user-detail {
 .action .date {
     font-style:italic;
     color:#ccc;
+}
+
+.light_green_header{
+    color: #12c064;
 }
