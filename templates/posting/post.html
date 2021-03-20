@@ -96,7 +96,6 @@
                 {% endif %}
                 <div class="comments_area">
                     {% for comment in comments %}
-
                         {% if comment.user.profile.photo %}
                             {% thumbnail comment.user.profile.photo "20x20" crop="100%" as im %}
                                 <a href="{{ comment.user.get_absolute_url }}">

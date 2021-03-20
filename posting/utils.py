@@ -26,22 +26,20 @@ def apply_post_filter(request):
         if form.is_valid():
             query = form.cleaned_data['query']
             result_posts = BlogPost.objects.annotate(
-                search=SearchVector('title', 'body'), ).filter(status='published').filter(search=query)
+                search=SearchVector('title', 'body'), ).filter(status='published')\
+                .filter(search=query).order_by('-created_date')
 
             add_post_ids_to_session(request, result_posts)
-
             return result_posts
     if 'tag' in request.GET:
         form = SearchTagForm()
-        query = None
         if 'query' in request.GET:
             form = SearchTagForm(request.GET)
         if form.is_valid():
             query = form.cleaned_data['query']
-            result_posts = BlogPost.objects.filter(status='published').filter(tags__icontains=query)
-
+            result_posts = BlogPost.objects.filter(status='published')\
+                .filter(tags__icontains=query).order_by('-created_date')
             add_post_ids_to_session(request, result_posts)
-
             return result_posts
 
     if 'reset' in request.GET:
@@ -73,7 +71,7 @@ def apply_post_filter(request):
 
     if 'tag_value' in request.GET:
         tag_value = request.GET['tag_value']
-        result_posts = BlogPost.objects.filter(status='published').filter(tags__icontains=tag_value)
+        result_posts = BlogPost.objects.filter(status='published').filter(tags__icontains=tag_value).order_by('-created_date')
         add_post_ids_to_session(request, result_posts)
         return result_posts
 

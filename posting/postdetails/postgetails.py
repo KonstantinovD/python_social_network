@@ -11,11 +11,7 @@ def process_post_request(request, post_detail):
             new_comment = comment_form.save(commit=False)
             new_comment = fill_new_comment_data(request, new_comment, post_detail)
             new_comment.save()
-            return HttpResponseRedirect(request.path.replace('/comment', ''))
-        else:
-            return HttpResponseRedirect(request.path.replace('/comment', ''))
-    if 'create_like_value' in request.POST:
-        pass
+        return HttpResponseRedirect(request.path.replace('/comment', ''))
     return HttpResponseRedirect(request.path)
 
 

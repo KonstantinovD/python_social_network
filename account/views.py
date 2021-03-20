@@ -89,23 +89,22 @@ def dashboard(request):
                    'unpublished': unpublished})
 
 
-# Хороший пример if-блоков для обработки формы
+
 def register(request):
     if request.method == 'POST':
         user_form = UserRegistrationForm(request.POST)
         if user_form.is_valid():
-            # Создаем нового пользователя, но пока не сохраняем в базу данных.
+            # Create new user but don't save it to database immediately
             new_user = user_form.save(commit=False)
-            # Вместо сохранения пароля «как есть», мы используем метод set_password()
-            # модели User. Он сохранит пароль в зашифрованном виде
+            # Instead of save password 'as is', we use set_password() method
+            # That method will save the password encrypted
             new_user.set_password(user_form.cleaned_data['password'])
-            # Сохраняем пользователя в базе данных.
+            # Save new user to database.
             new_user.save()
             group = Group.objects.get(name=UserGroupNames.BASE_USER)
             group.user_set.add(new_user)
             group.save()
             Profile.objects.create(user=new_user)
-            # create_action(new_user, 'has created an account')
             return render(request,
                           'account/register_done.html',
                           {'new_user': new_user})
@@ -163,7 +162,7 @@ def edit(request):
 
 
 def user_list(request):
-    users = User.objects.filter(is_active=True)
+    users = User.objects.filter(is_active=True).order_by('date_joined')
     return render(request, 'account/user/list.html',
                   {'section': 'people', 'users': users})
 
